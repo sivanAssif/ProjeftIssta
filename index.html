@@ -1,0 +1,600 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>דשבורד בקרה — איסתא סיטונאות · עלייה לאוויר 30.9.2026</title>
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --brand:#6F28F0; --brand-dark:#5720B9; --brand-bg:#F2ECFE; --brand-bg2:#E5D8FC; --ring:#BE9DF8;
+  --ink:#180926; --body:#42364E; --muted:#574C61; --dim:#968F9D; --line:#D6D4D9; --row:#EDEBF0;
+  --red:#B2293E; --red-bg:#FDEDEE; --green:#1E8E3F; --green-bg:#D7F3DE; --success:#37C457;
+  --orange:#B15B00; --orange-bg:#FFEED7; --neutral:#E1DFE3; --app-bg:#F5F2F4;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Heebo','Inter',sans-serif;background:var(--app-bg);color:var(--body);font-size:13.5px;line-height:1.5}
+.wrap{max-width:1200px;margin:0 auto;padding:0 40px}
+h1,h2,h3{color:var(--ink)}
+a{color:var(--brand)}
+.num{font-variant-numeric:tabular-nums}
+
+header{background:var(--brand);color:#fff;padding:28px 0 26px}
+.eyebrow{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#D8C4FB;margin-bottom:6px}
+header h1{font-size:28px;line-height:34px;font-weight:700;color:#fff}
+header .sub{font-size:13px;color:#E5D8FC;margin-top:4px}
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-top:20px}
+.kpi{background:rgba(255,255,255,.10);border:1px solid rgba(255,255,255,.22);border-radius:10px;padding:12px 16px}
+.kpi .v{font-size:26px;font-weight:700;font-variant-numeric:tabular-nums}
+.kpi .l{font-size:12px;color:#E5D8FC;margin-top:2px}
+.rag-dot{display:inline-block;width:14px;height:14px;border-radius:50%;vertical-align:middle;margin-left:8px}
+
+nav{position:sticky;top:0;z-index:50;background:#fff;border-bottom:1px solid var(--line);box-shadow:0 2px 8px rgba(49,19,79,.06)}
+nav .wrap{display:flex;align-items:center;gap:4px;flex-wrap:wrap;padding-top:8px;padding-bottom:8px}
+nav a{font-size:12.5px;font-weight:600;color:var(--muted);text-decoration:none;padding:5px 9px;border-radius:8px;transition:background .15s}
+nav a:hover{background:var(--brand-bg);color:var(--brand)}
+nav .spacer{flex:1}
+.navbtn{font-family:inherit;font-size:12.5px;font-weight:600;border:1px solid var(--line);background:#fff;border-radius:8px;padding:5px 10px;cursor:pointer;color:var(--body);transition:background .15s}
+.navbtn:hover{background:var(--brand-bg)}
+.navbtn:disabled{opacity:.45;cursor:default}
+#saveState{font-size:12px;color:var(--dim);padding:0 6px;white-space:nowrap}
+#saveState.saved{color:var(--green)}
+#saveState.pending{color:var(--orange)}
+
+section{margin:34px 0}
+.sec-head{display:flex;align-items:center;gap:10px;border-bottom:2px solid var(--ink);padding-bottom:8px;margin-bottom:14px;flex-wrap:wrap}
+.iconwell{width:28px;height:28px;border-radius:8px;background:var(--ink);display:flex;align-items:center;justify-content:center;flex:none}
+.iconwell.red{background:var(--red)} .iconwell.orange{background:var(--orange)}
+.iconwell svg{width:16px;height:16px;stroke:#fff;stroke-width:1.7;fill:none;stroke-linecap:round;stroke-linejoin:round}
+.sec-head h2{font-size:19px;line-height:26px;font-weight:700}
+.ownerchip{background:var(--brand-bg);color:var(--brand-dark);font-size:11.5px;font-weight:700;border-radius:999px;padding:3px 10px}
+.sec-note{font-size:12px;color:var(--dim);margin-inline-start:auto;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:52%}
+
+.tblwrap{background:#fff;border-radius:10px;box-shadow:0 0 20px rgba(49,19,79,.08);overflow-x:auto}
+table{width:100%;border-collapse:collapse;min-width:720px}
+th{background:var(--brand-bg);font-size:12px;font-weight:600;color:var(--brand-dark);text-align:right;padding:9px 12px;white-space:nowrap}
+td{font-size:13.5px;padding:9px 12px;border-top:1px solid var(--row);vertical-align:top}
+tr.deleted td{text-decoration:line-through;color:var(--dim)}
+tr.deleted .pill,tr.deleted .ownerbtn{opacity:.5}
+td.actions{width:34px;white-space:nowrap}
+.xbtn{border:none;background:none;cursor:pointer;color:var(--dim);font-size:14px;border-radius:6px;padding:2px 6px}
+.xbtn:hover{background:var(--red-bg);color:var(--red)}
+.xbtn.restore:hover{background:var(--green-bg);color:var(--green)}
+
+[contenteditable]{border-radius:6px;padding:1px 4px;margin:-1px -4px;transition:background .15s;outline:none;cursor:text;min-width:20px;display:inline-block}
+[contenteditable]:hover{background:var(--brand-bg)}
+[contenteditable]:focus{background:var(--brand-bg2);box-shadow:0 0 0 2px var(--ring)}
+
+.pill{display:inline-flex;align-items:center;gap:6px;border-radius:999px;padding:3px 11px;font-size:12px;font-weight:600;cursor:pointer;border:none;font-family:inherit;white-space:nowrap;transition:filter .15s}
+.pill:hover{filter:brightness(.96)}
+.pill .dot{width:6px;height:6px;border-radius:50%;background:currentColor}
+.pill.s0{background:var(--neutral);color:var(--body)}
+.pill.s1{background:var(--brand-bg2);color:var(--brand-dark)}
+.pill.s2{background:var(--red-bg);color:var(--red)}
+.pill.s3{background:var(--green-bg);color:var(--green)}
+.pill.s4{background:var(--orange-bg);color:var(--orange)}
+
+.ownerbtn{display:inline-flex;align-items:center;gap:6px;background:#fff;border:1px solid var(--line);border-radius:999px;padding:3px 11px;font-size:12px;font-weight:600;color:var(--body);cursor:pointer;font-family:inherit;white-space:nowrap;transition:background .15s}
+.ownerbtn:hover{background:var(--brand-bg)}
+.ownerbtn.unassigned{color:var(--red);background:var(--red-bg);border-color:#F3C2CB}
+
+.due{font-variant-numeric:tabular-nums;white-space:nowrap}
+.due.past{color:var(--red);font-weight:700}
+.due.soon{color:var(--orange);font-weight:700}
+
+#popover{position:absolute;z-index:100;background:#fff;border-radius:8px;box-shadow:0 8px 24px rgba(49,19,79,.23);padding:6px;min-width:170px;display:none}
+#popover button{display:block;width:100%;text-align:right;border:none;background:none;font-family:inherit;font-size:13px;padding:7px 12px;border-radius:6px;cursor:pointer;color:var(--body)}
+#popover button:hover{background:var(--brand-bg)}
+#popover button.current{background:var(--brand-bg2);font-weight:700;color:var(--brand-dark)}
+
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px}
+.card{background:#fff;border-radius:10px;box-shadow:0 0 20px rgba(49,19,79,.08);padding:14px 16px}
+.card .d{color:var(--brand);font-size:12px;font-weight:700;margin-bottom:4px}
+.card.done{opacity:.62}
+.card .row2{display:flex;justify-content:space-between;align-items:center;margin-top:10px;gap:6px}
+
+.goal{background:#fff;border-radius:8px;box-shadow:0 0 20px rgba(49,19,79,.08);border-inline-start:4px solid var(--brand);padding:14px 18px;margin-top:14px}
+.goal h3{font-size:14px;color:var(--brand);margin-bottom:8px}
+.goal .tblwrap{box-shadow:none;border:1px solid var(--row)}
+
+.check{display:flex;align-items:flex-start;gap:10px;padding:9px 12px;border-top:1px solid var(--row)}
+.check:first-child{border-top:none}
+.check input{width:17px;height:17px;accent-color:var(--brand);margin-top:2px;cursor:pointer;flex:none}
+.check.done span{color:var(--dim);text-decoration:line-through}
+
+.filters{display:flex;gap:12px;align-items:center;margin-bottom:12px;flex-wrap:wrap}
+.filters select{font-family:inherit;font-size:12.5px;border:1px solid var(--line);border-radius:8px;padding:5px 9px;background:#fff;color:var(--body)}
+.filters label{font-size:12.5px;display:flex;align-items:center;gap:5px;cursor:pointer}
+.filters input{accent-color:var(--brand)}
+
+.footgap{height:60px}
+@media (max-width:800px){.wrap{padding:0 16px}.kpis{grid-template-columns:repeat(2,1fr)}.sec-note{display:none}}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap">
+    <div class="eyebrow">Travel Booster · איסתא סיטונאות</div>
+    <h1>דשבורד בקרה — עלייה לאוויר 30.9.2026</h1>
+    <div class="sub">כלי בקרה, מעקב ושחרור חסמים · כל שינוי נשמר ומשותף לכולם אוטומטית</div>
+    <div class="kpis">
+      <div class="kpi"><div class="v num" id="kpiDays">—</div><div class="l">ימים לעלייה לאוויר (30.9)</div></div>
+      <div class="kpi"><div class="v" id="kpiRag">—</div><div class="l">סטטוס כולל (רמזור)</div></div>
+      <div class="kpi"><div class="v num" id="kpiBlockers">—</div><div class="l">חסמים פתוחים</div></div>
+      <div class="kpi"><div class="v num" id="kpiDone">—</div><div class="l">מהמשימות הושלמו</div></div>
+    </div>
+  </div>
+</header>
+
+<nav><div class="wrap">
+  <a href="#sec-decisions">שולחן אורלי</a><a href="#sec-blockers">חסמים</a><a href="#sec-milestones">אבני דרך</a>
+  <a href="#sec-changes">שינויים</a><a href="#sec-qa">בדיקות</a><a href="#sec-interfaces">ממשקים</a>
+  <a href="#sec-training">הדרכות</a><a href="#sec-gov">בקרה</a><a href="#sec-risks">סיכונים</a>
+  <a href="#sec-all">כל המשימות</a><a href="#sec-history">היסטוריה</a>
+  <span class="spacer"></span>
+  <span id="saveState">✓ נשמר ומשותף</span>
+  <button class="navbtn" id="undoBtn" disabled>↩ ביטול פעולה</button>
+  <button class="navbtn" id="refreshBtn">⟳ רענון</button>
+</div></nav>
+
+<div class="wrap" id="main"></div>
+<div id="popover"></div>
+<div class="footgap"></div>
+
+<script>
+"use strict";
+const API = "/api/data";
+const GO_LIVE = new Date(2026, 8, 30);
+const STATUSES = ["טרם התחיל","בתהליך","חסום","הושלם","בסיכון"];
+const PEOPLE = ["נלי","עדי","תומר","ניתי","דניס","יונתן","נחמה","אורלי","יש למנות אחראי"];
+const UNASSIGNED = "יש למנות אחראי";
+
+let DATA = null;
+let undoStack = [];
+let saveTimer = null, pendingSave = false;
+
+function userName(){
+  let n = localStorage.getItem("issta-user");
+  if(!n){
+    n = (prompt("כדי שנדע מי עדכן מה בדף (היסטוריית עדכונים), אנא כתבו את שמכם:") || "").trim();
+    if(!n) n = "אורח/ת";
+    localStorage.setItem("issta-user", n);
+  }
+  return n;
+}
+
+function parseDue(str){
+  if(!str) return null;
+  const m = String(str).match(/(\d{1,2})\.(\d{1,2})/);
+  if(!m) return null;
+  return new Date(2026, +m[2]-1, +m[1]);
+}
+function dueClass(str){
+  const d = parseDue(str); if(!d) return "";
+  const today = new Date(); today.setHours(0,0,0,0);
+  const diff = (d - today)/86400000;
+  if(diff < 0) return "past";
+  if(diff < 7) return "soon";
+  return "";
+}
+function nowStamp(){
+  const n = new Date();
+  return `${n.getDate()}.${n.getMonth()+1}.${n.getFullYear()} ${String(n.getHours()).padStart(2,"0")}:${String(n.getMinutes()).padStart(2,"0")}`;
+}
+
+function logAction(text){
+  DATA.history.unshift({ts: nowStamp(), u: userName(), a: text});
+  if(DATA.history.length > 300) DATA.history.length = 300;
+}
+function snapshot(){
+  undoStack.push(JSON.stringify(DATA));
+  if(undoStack.length > 50) undoStack.shift();
+  document.getElementById("undoBtn").disabled = false;
+}
+function undo(){
+  if(!undoStack.length) return;
+  DATA = JSON.parse(undoStack.pop());
+  document.getElementById("undoBtn").disabled = !undoStack.length;
+  renderAll(); queueSave();
+}
+function queueSave(){
+  pendingSave = true;
+  setSaveState("pending","שינויים ממתינים…");
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(doSave, 2500);
+}
+function setSaveState(cls,txt){
+  const el = document.getElementById("saveState");
+  el.className = cls; el.textContent = txt;
+}
+async function doSave(){
+  setSaveState("pending","שומר ומשתף…");
+  try{
+    const r = await fetch(API, {method:"PUT",
+      headers:{"Content-Type":"application/json","X-User":encodeURIComponent(userName())},
+      body: JSON.stringify(DATA)});
+    if(!r.ok) throw new Error(r.status);
+    pendingSave = false;
+    setSaveState("saved","✓ נשמר ומשותף");
+  }catch(e){
+    setSaveState("pending","שינויים ממתינים…");
+    saveTimer = setTimeout(doSave, 5000);
+  }
+}
+function change(desc, fn){
+  snapshot(); fn(); logAction(desc); renderAll(); queueSave();
+}
+
+const pop = document.getElementById("popover");
+function openMenu(anchor, options, current, onPick){
+  pop.innerHTML = "";
+  options.forEach(opt=>{
+    const b = document.createElement("button");
+    b.textContent = opt;
+    if(opt === current) b.className = "current";
+    b.onclick = ()=>{ closeMenu(); onPick(opt); };
+    pop.appendChild(b);
+  });
+  const r = anchor.getBoundingClientRect();
+  pop.style.display = "block";
+  pop.style.top = (r.bottom + scrollY + 4) + "px";
+  const left = Math.max(8, r.left + scrollX - 40);
+  pop.style.left = Math.min(left, innerWidth - 200) + "px";
+}
+function closeMenu(){ pop.style.display = "none"; }
+addEventListener("click", e=>{ if(!pop.contains(e.target) && !e.target.closest(".pill,.ownerbtn")) closeMenu(); }, true);
+
+function esc(s){ const d=document.createElement("div"); d.textContent = s==null?"":s; return d.innerHTML; }
+
+function editableCell(item, field, label){
+  const span = document.createElement("span");
+  span.contentEditable = "true";
+  span.textContent = item[field] || "";
+  let before = "";
+  span.addEventListener("focus", ()=>{ before = span.textContent; });
+  span.addEventListener("blur", ()=>{
+    const val = span.textContent.trim();
+    if(val !== before.trim()){
+      change(`עודכן ${label}: ${val.slice(0,60)}`, ()=>{ item[field] = val; });
+    }
+  });
+  span.addEventListener("keydown", e=>{ if(e.key === "Enter"){ e.preventDefault(); span.blur(); } });
+  return span;
+}
+function statusPill(item, itemLabel){
+  const s = item.s ?? 0;
+  const b = document.createElement("button");
+  b.className = "pill s"+s;
+  b.innerHTML = `<span class="dot"></span>${esc(STATUSES[s])} ▾`;
+  b.onclick = ()=> openMenu(b, STATUSES, STATUSES[s], pick=>{
+    const ns = STATUSES.indexOf(pick);
+    if(ns !== item.s) change(`סטטוס עודכן ל"${pick}" — ${itemLabel(item).slice(0,70)}`, ()=>{ item.s = ns; });
+  });
+  return b;
+}
+function ownerBtn(item, field, itemLabel){
+  const cur = item[field] || UNASSIGNED;
+  const b = document.createElement("button");
+  b.className = "ownerbtn" + (cur === UNASSIGNED ? " unassigned" : "");
+  b.innerHTML = esc(cur) + " ▾";
+  b.onclick = ()=> openMenu(b, [...PEOPLE, "שם אחר…"], cur, pick=>{
+    if(pick === "שם אחר…"){
+      pick = (prompt("שם האחראי (בן/בת אדם):") || "").trim();
+      if(!pick) return;
+      if(pick.includes("גלאור")){ alert("האחראי חייב להיות בן אדם — לא שם החברה."); return; }
+    }
+    if(pick !== cur) change(`אחראי עודכן ל"${pick}" — ${itemLabel(item).slice(0,70)}`, ()=>{ item[field] = pick; });
+  });
+  return b;
+}
+function dueCell(item, field){
+  const td = document.createElement("td");
+  const span = editableCell(item, field, "תאריך יעד");
+  span.classList.add("due","num");
+  const c = dueClass(item[field]); if(c) span.classList.add(c);
+  td.appendChild(span);
+  return td;
+}
+function deleteBtn(item, itemLabel){
+  const b = document.createElement("button");
+  if(item.x){
+    b.className = "xbtn restore"; b.textContent = "↩"; b.title = "שחזור שורה";
+    b.onclick = ()=> change(`שוחזרה שורה — ${itemLabel(item).slice(0,70)}`, ()=>{ delete item.x; });
+  }else{
+    b.className = "xbtn"; b.textContent = "✕"; b.title = "ביטול שורה (ניתן לשחזר)";
+    b.onclick = ()=> change(`בוטלה שורה — ${itemLabel(item).slice(0,70)}`, ()=>{ item.x = true; });
+  }
+  return b;
+}
+
+function buildTable(items, cols, itemLabel){
+  const wrap = document.createElement("div"); wrap.className = "tblwrap";
+  const t = document.createElement("table");
+  const thead = document.createElement("thead");
+  const hr = document.createElement("tr");
+  cols.forEach(c=>{ const th=document.createElement("th"); th.textContent=c.h; hr.appendChild(th); });
+  hr.appendChild(document.createElement("th"));
+  thead.appendChild(hr); t.appendChild(thead);
+  const tb = document.createElement("tbody");
+  items.forEach(item=>{
+    const tr = document.createElement("tr");
+    if(item.x) tr.className = "deleted";
+    cols.forEach(c=>{
+      const node = c.render(item);
+      if(node.tagName === "TD") tr.appendChild(node);
+      else{ const td=document.createElement("td"); td.appendChild(node); tr.appendChild(td); }
+    });
+    const tda = document.createElement("td"); tda.className="actions";
+    tda.appendChild(deleteBtn(item, itemLabel)); tr.appendChild(tda);
+    tb.appendChild(tr);
+  });
+  t.appendChild(tb); wrap.appendChild(t);
+  return wrap;
+}
+
+const ICONS = {
+  gavel:'<svg viewBox="0 0 24 24"><path d="M14 13l7 7M9 8l6 6M4 13l6-6M12 3l7 7"/><path d="M3 21h7"/></svg>',
+  alert:'<svg viewBox="0 0 24 24"><path d="M12 3l10 18H2z"/><line x1="12" y1="10" x2="12" y2="14"/><line x1="12" y1="17" x2="12" y2="17.01"/></svg>',
+  flag:'<svg viewBox="0 0 24 24"><path d="M5 21V4"/><path d="M5 4c5-2.5 9 2.5 14 0v9c-5 2.5-9-2.5-14 0"/></svg>',
+  list:'<svg viewBox="0 0 24 24"><line x1="9" y1="6" x2="20" y2="6"/><line x1="9" y1="12" x2="20" y2="12"/><line x1="9" y1="18" x2="20" y2="18"/><line x1="4" y1="6" x2="4" y2="6.01"/><line x1="4" y1="12" x2="4" y2="12.01"/><line x1="4" y1="18" x2="4" y2="18.01"/></svg>',
+  test:'<svg viewBox="0 0 24 24"><path d="M9 3h6M10 3v6L4.5 19a2 2 0 0 0 1.8 3h11.4a2 2 0 0 0 1.8-3L14 9V3"/></svg>',
+  plug:'<svg viewBox="0 0 24 24"><path d="M9 7V3M15 7V3"/><path d="M6 7h12v4a6 6 0 0 1-12 0z"/><path d="M12 17v4"/></svg>',
+  grad:'<svg viewBox="0 0 24 24"><path d="M2 9l10-5 10 5-10 5z"/><path d="M6 11v5c0 1.5 3 3 6 3s6-1.5 6-3v-5"/></svg>',
+  gauge:'<svg viewBox="0 0 24 24"><circle cx="12" cy="13" r="9"/><path d="M12 13l4-4"/></svg>',
+  grid:'<svg viewBox="0 0 24 24"><rect x="3" y="3" width="8" height="8" rx="1"/><rect x="13" y="3" width="8" height="8" rx="1"/><rect x="3" y="13" width="8" height="8" rx="1"/><rect x="13" y="13" width="8" height="8" rx="1"/></svg>',
+  clock:'<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>'
+};
+
+function secHead(id, icon, iconCls, title, ownerChip, note){
+  return `<div class="sec-head" id="${id}">
+    <div class="iconwell ${iconCls||""}">${ICONS[icon]}</div>
+    <h2>${esc(title)}</h2>
+    ${ownerChip ? `<span class="ownerchip">${esc(ownerChip)}</span>` : ""}
+    ${note ? `<span class="sec-note">${esc(note)}</span>` : ""}
+  </div>`;
+}
+
+let allTasksFilter = {domain:"הכל", openOnly:false, deleted:false};
+
+function renderAll(){
+  const main = document.getElementById("main");
+  const scroll = scrollY;
+  main.innerHTML = "";
+  const D = DATA;
+  const lbl = it => it.t || it.n || "";
+
+  const today = new Date(); today.setHours(0,0,0,0);
+  document.getElementById("kpiDays").textContent = Math.max(0, Math.round((GO_LIVE - today)/86400000));
+  const openBlockers = D.blockers.filter(b=>!b.x && b.s!==3).length;
+  document.getElementById("kpiBlockers").textContent = openBlockers;
+  const taskPools = [D.changes,D.qa,D.interfaces,D.training,D.governance,D.gaps,D.decisions].flat().filter(i=>!i.x);
+  const done = taskPools.filter(i=>i.s===3).length;
+  document.getElementById("kpiDone").textContent = taskPools.length ? Math.round(done/taskPools.length*100)+"%" : "0%";
+  const anyBlockedIfaceRisk = [...D.interfaces,...D.risks].some(i=>!i.x && i.s===2);
+  const anyAtRisk = taskPools.some(i=>i.s===2 || i.s===4);
+  let rag = "ירוק", ragColor = "#7ED09A";
+  if(openBlockers >= 3 || anyBlockedIfaceRisk){ rag = "אדום"; ragColor = "#F28B7D"; }
+  else if(openBlockers > 0 || anyAtRisk){ rag = "צהוב"; ragColor = "#F0C46A"; }
+  document.getElementById("kpiRag").innerHTML = `<span class="rag-dot" style="background:${ragColor}"></span>${rag}`;
+
+  const addSec = (headHtml, node)=>{
+    const s=document.createElement("section");
+    const h=document.createElement("div"); h.innerHTML=headHtml;
+    while(h.firstChild) s.appendChild(h.firstChild);
+    if(node) s.appendChild(node);
+    main.appendChild(s); return s;
+  };
+
+  addSec(secHead("sec-decisions","gavel","","שולחן אורלי — החלטות פתוחות",null,"החלטות שממתינות לאורלי"),
+    buildTable(D.decisions,[
+      {h:"ההחלטה הנדרשת", render:it=>editableCell(it,"t","החלטה")},
+      {h:"למה זה דחוף", render:it=>editableCell(it,"w","נימוק")},
+      {h:"יעד", render:it=>dueCell(it,"d")},
+      {h:"מה הוחלט", render:it=>editableCell(it,"dec","החלטה שהתקבלה")},
+      {h:"סטטוס", render:it=>statusPill(it,lbl)}
+    ],lbl));
+
+  addSec(secHead("sec-blockers","alert","red","חסמים פתוחים",null,"מה שתוקע את הפרויקט — דורש החלטה או הסלמה"),
+    buildTable(D.blockers,[
+      {h:"החסם", render:it=>editableCell(it,"t","חסם")},
+      {h:"אחראי", render:it=>ownerBtn(it,"o",lbl)},
+      {h:"יעד לשחרור", render:it=>dueCell(it,"d")},
+      {h:"פעולה לשחרור", render:it=>editableCell(it,"a","פעולה")},
+      {h:"סטטוס", render:it=>statusPill(it,lbl)}
+    ],lbl));
+
+  const msSec = addSec(secHead("sec-milestones","flag","","אבני דרך — תכנון לאחור מ-30.9",null,"אבן דרך שהושלמה מתעמעמת"));
+  const cards = document.createElement("div"); cards.className="cards";
+  D.milestones.forEach(m=>{
+    const c = document.createElement("div");
+    c.className = "card" + (m.s===3?" done":"");
+    if(m.x) c.style.opacity=".4";
+    const d = document.createElement("div"); d.className="d num";
+    d.appendChild(editableCell(m,"d","תאריך אבן דרך"));
+    const t = document.createElement("div");
+    t.appendChild(editableCell(m,"t","אבן דרך"));
+    const row = document.createElement("div"); row.className="row2";
+    row.appendChild(statusPill(m,lbl));
+    row.appendChild(deleteBtn(m,lbl));
+    c.append(d,t,row); cards.appendChild(c);
+  });
+  msSec.appendChild(cards);
+
+  const chSec = addSec(secHead("sec-changes","list","","תחום 1 · שינויים ופערים","אחראי: עדי","סגירת זרם השינויים לקראת ההקפאה ב-31.7"),
+    buildTable(D.changes,[
+      {h:"השינוי", render:it=>editableCell(it,"t","שינוי")},
+      {h:"אחראי", render:it=>ownerBtn(it,"o",lbl)},
+      {h:"יעד", render:it=>dueCell(it,"d")},
+      {h:"חובה לעלייה?", render:it=>editableCell(it,"m","סיווג")},
+      {h:"סטטוס", render:it=>statusPill(it,lbl)}
+    ],lbl));
+  const goal = document.createElement("div"); goal.className="goal";
+  goal.innerHTML = `<h3>פערים פוטנציאליים — לוודא שנכנסו למטריצת הבדיקות</h3>`;
+  goal.appendChild(buildTable(D.gaps,[
+    {h:"הפער", render:it=>editableCell(it,"t","פער")},
+    {h:"אחראי", render:it=>ownerBtn(it,"o",lbl)},
+    {h:"סטטוס", render:it=>statusPill(it,lbl)}
+  ],lbl));
+  chSec.appendChild(goal);
+
+  addSec(secHead("sec-qa","test","","תחום 2 · בדיקות — מטריצת סנריו","אחראית: ניתי (מלווה: תומר)","לכל סנריו אחראי אחד, יעד ושיקוף ללקוח"),
+    buildTable(D.qa,[
+      {h:"הסנריו / המשימה", render:it=>editableCell(it,"t","סנריו")},
+      {h:"אחראי", render:it=>ownerBtn(it,"o",lbl)},
+      {h:"יעד", render:it=>dueCell(it,"d")},
+      {h:"שיקוף ללקוח", render:it=>editableCell(it,"c","שיקוף")},
+      {h:"סטטוס", render:it=>statusPill(it,lbl)}
+    ],lbl));
+
+  const ilbl = it => it.n || "";
+  addSec(secHead("sec-interfaces","plug","","תחום 3 · ממשקים צד ג'","אחראי: טרם מונה — פער!","ביפרו · ישראייר · Price Box · ALP · LDS · שוברי סוכן"),
+    buildTable(D.interfaces,[
+      {h:"הממשק", render:it=>editableCell(it,"n","שם ממשק")},
+      {h:"מצב נוכחי", render:it=>editableCell(it,"st","מצב")},
+      {h:"אחראי", render:it=>ownerBtn(it,"o",ilbl)},
+      {h:"יעד", render:it=>dueCell(it,"d")},
+      {h:"הפעולה הבאה", render:it=>editableCell(it,"nx","פעולה הבאה")},
+      {h:"סטטוס", render:it=>statusPill(it,ilbl)}
+    ],ilbl));
+
+  addSec(secHead("sec-training","grad","","תחום 4 · הדרכות","אחראית: דניס","דפי עזר לפי תהליך העבודה של הלקוח — לא גנרי"),
+    buildTable(D.training,[
+      {h:"המשימה", render:it=>editableCell(it,"t","הדרכה")},
+      {h:"אחראי", render:it=>ownerBtn(it,"o",lbl)},
+      {h:"יעד", render:it=>dueCell(it,"d")},
+      {h:"סטטוס", render:it=>statusPill(it,lbl)}
+    ],lbl));
+
+  const govSec = addSec(secHead("sec-gov","gauge","","תחום 5 · בקרה וקצב","אחראית: נלי (מלווה: סיוון)","דיילי, ישיבה שבועית ודיווח לאורלי"),
+    buildTable(D.governance,[
+      {h:"המשימה", render:it=>editableCell(it,"t","בקרה")},
+      {h:"אחראי", render:it=>ownerBtn(it,"o",lbl)},
+      {h:"יעד", render:it=>dueCell(it,"d")},
+      {h:"סטטוס", render:it=>statusPill(it,lbl)}
+    ],lbl));
+  const gng = document.createElement("div"); gng.className="goal";
+  gng.innerHTML = `<h3>צ'קליסט Go/No-Go — 15.9 עם אורלי והלקוח</h3>`;
+  const gwrap = document.createElement("div");
+  D.gonogo.forEach(g=>{
+    const row = document.createElement("div"); row.className = "check" + (g.done?" done":"");
+    const cb = document.createElement("input"); cb.type="checkbox"; cb.checked = !!g.done;
+    cb.onchange = ()=> change(`Go/No-Go ${cb.checked?"סומן":"בוטל סימון"} — ${g.t.slice(0,60)}`, ()=>{ g.done = cb.checked; });
+    const sp = document.createElement("span"); sp.appendChild(editableCell(g,"t","קריטריון Go/No-Go"));
+    row.append(cb,sp); gwrap.appendChild(row);
+  });
+  gng.appendChild(gwrap); govSec.appendChild(gng);
+  const hyper = document.createElement("div"); hyper.className="goal";
+  hyper.innerHTML = `<h3>ליווי מוגבר אחרי העלייה (Hypercare)</h3>
+    <div>שבועיים ראשונים אחרי 30.9: זמינות מוגברת של כל הצוות, ערוץ תקלות ישיר ללקוח, סבב יומי על תקלות פתוחות, ותוכנית ידועה מראש — מה עושים אם משהו קריטי נשבר ביום הראשון.</div>`;
+  govSec.appendChild(hyper);
+
+  addSec(secHead("sec-risks","alert","orange","סיכונים מרכזיים",null,"מה עלול להפיל את ה-30.9 — ומה עושים שלא"),
+    buildTable(D.risks,[
+      {h:"הסיכון", render:it=>editableCell(it,"t","סיכון")},
+      {h:"מה עושים", render:it=>editableCell(it,"m","מיטיגציה")},
+      {h:"אחראי", render:it=>ownerBtn(it,"o",lbl)},
+      {h:"סטטוס", render:it=>statusPill(it,lbl)}
+    ],lbl));
+
+  const DOMAINS = [
+    ["שינויים","changes"],["פערים","gaps"],["בדיקות","qa"],["ממשקים","interfaces"],
+    ["הדרכות","training"],["בקרה","governance"],["חסמים","blockers"],["החלטות","decisions"]
+  ];
+  const allSec = addSec(secHead("sec-all","grid","","כל המשימות — תצוגה מרוכזת",null,"טבלה מאוחדת מכל התחומים, ממוינת לפי יעד"));
+  const filt = document.createElement("div"); filt.className="filters";
+  const sel = document.createElement("select");
+  ["הכל",...DOMAINS.map(d=>d[0])].forEach(d=>{ const o=document.createElement("option"); o.textContent=d; if(d===allTasksFilter.domain) o.selected=true; sel.appendChild(o); });
+  sel.onchange = ()=>{ allTasksFilter.domain = sel.value; renderAll(); };
+  const l1 = document.createElement("label");
+  const c1 = document.createElement("input"); c1.type="checkbox"; c1.checked=allTasksFilter.openOnly;
+  c1.onchange = ()=>{ allTasksFilter.openOnly = c1.checked; renderAll(); };
+  l1.append(c1, "רק פתוחות");
+  const l2 = document.createElement("label");
+  const c2 = document.createElement("input"); c2.type="checkbox"; c2.checked=allTasksFilter.deleted;
+  c2.onchange = ()=>{ allTasksFilter.deleted = c2.checked; renderAll(); };
+  l2.append(c2, "שורות שבוטלו");
+  filt.append(sel,l1,l2); allSec.appendChild(filt);
+  let rows = [];
+  DOMAINS.forEach(([name,key])=>{
+    if(allTasksFilter.domain !== "הכל" && allTasksFilter.domain !== name) return;
+    D[key].forEach(it=> rows.push({domain:name, it}));
+  });
+  rows = rows.filter(r=> allTasksFilter.deleted ? r.it.x : !r.it.x);
+  if(allTasksFilter.openOnly) rows = rows.filter(r=> r.it.s !== 3);
+  rows.sort((a,b)=>{
+    const da = parseDue(a.it.d), db = parseDue(b.it.d);
+    if(da && db) return da - db;
+    return da ? -1 : db ? 1 : 0;
+  });
+  const allWrap = document.createElement("div"); allWrap.className="tblwrap";
+  const at = document.createElement("table");
+  at.innerHTML = `<thead><tr><th>תחום</th><th>המשימה</th><th>אחראי</th><th>יעד</th><th>סטטוס</th></tr></thead>`;
+  const atb = document.createElement("tbody");
+  rows.forEach(({domain,it})=>{
+    const tr = document.createElement("tr");
+    if(it.x) tr.className="deleted";
+    const t1=document.createElement("td"); t1.textContent=domain;
+    const t2=document.createElement("td"); t2.textContent = it.t || it.n || "";
+    const t3=document.createElement("td"); t3.appendChild(ownerBtn(it,"o",lbl));
+    const t4=document.createElement("td");
+    const ds=document.createElement("span"); ds.className="due num "+dueClass(it.d); ds.textContent = it.d||"—"; t4.appendChild(ds);
+    const t5=document.createElement("td"); t5.appendChild(statusPill(it,lbl));
+    tr.append(t1,t2,t3,t4,t5); atb.appendChild(tr);
+  });
+  at.appendChild(atb); allWrap.appendChild(at); allSec.appendChild(allWrap);
+
+  const hSec = addSec(secHead("sec-history","clock","","היסטוריית עדכונים",null,"נרשם אוטומטית — מתי, מי, מה"));
+  const hWrap = document.createElement("div"); hWrap.className="tblwrap";
+  const ht = document.createElement("table");
+  ht.innerHTML = `<thead><tr><th style="width:140px">מתי</th><th style="width:120px">מי</th><th>מה</th></tr></thead>`;
+  const htb = document.createElement("tbody");
+  D.history.slice(0,60).forEach(h=>{
+    const tr = document.createElement("tr");
+    tr.innerHTML = `<td class="num">${esc(h.ts)}</td><td>${esc(h.u)}</td><td>${esc(h.a)}</td>`;
+    htb.appendChild(tr);
+  });
+  ht.appendChild(htb); hWrap.appendChild(ht); hSec.appendChild(hWrap);
+
+  scrollTo(0, scroll);
+}
+
+async function load(showErrors){
+  try{
+    const r = await fetch(API + "?_=" + Date.now(), {cache:"no-store"});
+    if(!r.ok) throw new Error(r.status);
+    DATA = await r.json();
+    renderAll();
+    setSaveState("saved","✓ נשמר ומשותף");
+    return true;
+  }catch(e){
+    if(showErrors) setSaveState("pending","טוען…");
+    return false;
+  }
+}
+async function poll(){
+  if(pendingSave || (document.activeElement && document.activeElement.isContentEditable) || pop.style.display==="block") return;
+  try{
+    const r = await fetch(API + "?_=" + Date.now(), {cache:"no-store"});
+    if(!r.ok) return;
+    const fresh = await r.json();
+    if(DATA && JSON.stringify(fresh) !== JSON.stringify(DATA)){ DATA = fresh; renderAll(); }
+  }catch(e){}
+}
+
+document.getElementById("undoBtn").onclick = undo;
+document.getElementById("refreshBtn").onclick = ()=> load(true);
+addEventListener("keydown", e=>{
+  if((e.ctrlKey||e.metaKey) && e.key==="z" && !(document.activeElement && document.activeElement.isContentEditable)){ e.preventDefault(); undo(); }
+});
+
+(async ()=>{
+  userName();
+  let ok = await load(true);
+  let tries = 0;
+  while(!ok && tries < 5){ await new Promise(r=>setTimeout(r,3000)); ok = await load(true); tries++; }
+  setInterval(poll, 45000);
+})();
+</script>
+</body>
+</html>
