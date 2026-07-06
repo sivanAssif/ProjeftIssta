@@ -135,7 +135,7 @@ td.actions{width:34px;white-space:nowrap}
   <div class="wrap">
     <div class="eyebrow">Travel Booster · פרויקט אסטרטגי</div>
     <h1>איסתא סיטונאות — חדר בקרה לעלייה לאוויר</h1>
-    <div class="sub">בקרה, מעקב ושחרור חסמים · מוגש למנכ"לית · כל שינוי נשמר ומשותף אוטומטית</div>
+    <div class="sub">בקרה, מעקב ושחרור חסמים · מוגש לאורלי · עדכון אחרון: <span id="lastUpd" class="num">—</span></div>
     <div class="kpis">
       <div class="kpi"><div class="v num" id="kpiDays">—</div><div class="l">ימים ל-30.9</div></div>
       <div class="kpi"><div class="v" id="kpiRag">—</div><div class="l">סטטוס כולל (רמזור)</div></div>
@@ -166,7 +166,7 @@ td.actions{width:34px;white-space:nowrap}
 const API = "/api/data";
 const GO_LIVE = new Date(2026, 8, 30);
 const STATUSES = ["טרם התחיל","בתהליך","חסום","הושלם","בסיכון"];
-const PEOPLE = ["נלי","עדי","תומר","ניתי","דניס","יונתן","נחמה","אורלי","יש למנות אחראי"];
+const PEOPLE = ["נלי","עדי","תומר","ניתי","דניס","יונתן","סיוון","נחמה","אורלי","יש למנות אחראי"];
 const UNASSIGNED = "יש למנות אחראי";
 
 let DATA = null;
@@ -239,6 +239,8 @@ async function doSave(){
     if(!r.ok) throw new Error(r.status);
     pendingSave = false;
     setSaveState("saved","✓ נשמר ומשותף");
+    const lu = document.getElementById("lastUpd");
+    if(lu) lu.textContent = nowStamp();
   }catch(e){
     setSaveState("pending","שינויים ממתינים…");
     saveTimer = setTimeout(doSave, 5000);
@@ -464,7 +466,7 @@ function renderDash(main){
   };
 
   /* --- שולחן אורלי --- */
-  const decSec = addSec(secHead("sec-decisions","crown","","שולחן אורלי — החלטות פתוחות",null,false,"החלטות שרק המנכ\"לית יכולה לסגור — ברירת המחדל מציגה את הפתוחות"));
+  const decSec = addSec(secHead("sec-decisions","crown","","שולחן אורלי — החלטות פתוחות",null,false,"ההחלטות שרק אורלי יכולה לסגור. החלטה שהתקבלה — לתעד בעמודת ההחלטה ולסמן \"הושלם\"."));
   const decFilt = document.createElement("div"); decFilt.className="minifilt";
   decFilt.appendChild(fbtn("בעבודה", decFilter==="open", ()=>{ decFilter="open"; renderAll(); }));
   decFilt.appendChild(fbtn("הושלמו", decFilter==="done", ()=>{ decFilter="done"; renderAll(); }));
@@ -492,19 +494,19 @@ function renderDash(main){
     ()=>({t:"החלטה חדשה — לחצו לעריכה", w:"", d:"", dec:"", s:0}), "נוספה החלטה חדשה לשולחן אורלי"));
 
   /* --- חסמים --- */
-  const blkSec = addSec(secHead("sec-blockers","alert","red","חסמים פתוחים",null,false,"מה שתוקע את הפרויקט — דורש החלטה או הסלמה"),
+  const blkSec = addSec(secHead("sec-blockers","alert","red","חסמים פתוחים — דורשים החלטה / הסלמה",null,false,"השולחן של אורלי: רק מה שתקוע ודורש התערבות. חסם שנפתר — לסמן \"הושלם\"."),
     buildTable(D.blockers,[
       {h:"החסם", render:it=>editableCell(it,"t","חסם")},
-      {h:"אחראי", render:it=>ownerBtn(it,"o",lbl)},
-      {h:"יעד לשחרור", render:it=>dueCell(it,"d")},
-      {h:"פעולה לשחרור", render:it=>editableCell(it,"a","פעולה")},
+      {h:"אחראי לשחרור", render:it=>ownerBtn(it,"o",lbl)},
+      {h:"יעד", render:it=>dueCell(it,"d")},
+      {h:"הפעולה הנדרשת / ההחלטה", render:it=>editableCell(it,"a","פעולה")},
       {h:"סטטוס", render:it=>statusPill(it,lbl)}
     ],lbl));
   blkSec.appendChild(addRowBtn("הוספת חסם", D.blockers,
     ()=>({t:"חסם חדש — לחצו לעריכה", o:UNASSIGNED, d:"", a:"", s:0}), "נוסף חסם חדש"));
 
   /* --- אבני דרך --- */
-  const msSec = addSec(secHead("sec-milestones","flag","","אבני דרך — תכנון לאחור מ-30.9",null,false,"אבן דרך שהושלמה מתעמעמת"));
+  const msSec = addSec(secHead("sec-milestones","flag","","אבני דרך — תכנון לאחור מ-30.9",null,false,"כל אבן דרך היא שער: לא עוברים הלאה בלי לסגור אותה או להחליט במודע לדחות."));
   const cards = document.createElement("div"); cards.className="cards";
   D.milestones.forEach(m=>{
     const c = document.createElement("div");
@@ -524,31 +526,38 @@ function renderDash(main){
     ()=>({d:"", t:"אבן דרך חדשה — לחצו לעריכה", s:0}), "נוספה אבן דרך חדשה"));
 
   /* --- שינויים ופערים --- */
-  const chSec = addSec(secHead("sec-changes","list","","תחום 1 · שינויים ופערים","אחראי: עדי",false,"סגירת זרם השינויים לקראת ההקפאה ב-31.7"),
-    buildTable(D.changes,[
-      {h:"השינוי", render:it=>editableCell(it,"t","שינוי")},
+  const chSec = addSec(secHead("sec-changes","list","","תחום 1 · שינויים ופערים","אחראי: עדי (מוצר)",false,"שרשימת השינויים תפסיק להיות זרם אינסופי ותהפוך לרשימה סגורה ומנוהלת."));
+  const chGoal = document.createElement("div"); chGoal.className="goal"; chGoal.style.marginTop="0";
+  chGoal.innerHTML = `<b>התוצר:</b> טבלת שינויים חיה — לכל שינוי: חובה/לא לעלייה לאוויר, סיכון (מה יכול להישבר), השפעה על flow הבדיקות ואיך בודקים. <b>למה זה חשוב:</b> בלי זה אין הקפאת שינויים ואין דרך לדעת מה מסכן את העלייה לאוויר. <b>איך לגשת:</b> לעבור על גרסאות 138–145 באקסל של נלי, לסווג כל פריט פתוח, ולהוסיף מדור "פערים שעוד יכולים לצוץ".`;
+  chSec.appendChild(chGoal); chGoal.style.marginBottom="14px";
+  chSec.appendChild(buildTable(D.changes,[
+      {h:"השינוי / הפריט", render:it=>editableCell(it,"t","שינוי")},
       {h:"אחראי", render:it=>ownerBtn(it,"o",lbl)},
       {h:"יעד", render:it=>dueCell(it,"d")},
-      {h:"חובה לעלייה?", render:it=>editableCell(it,"m","סיווג")},
+      {h:"חובה לעלייה לאוויר?", render:it=>editableCell(it,"m","סיווג")},
       {h:"סטטוס", render:it=>statusPill(it,lbl)}
     ],lbl));
   chSec.appendChild(addRowBtn("הוספת שינוי", D.changes,
     ()=>({t:"שינוי חדש — לחצו לעריכה", o:"עדי", d:"", m:"לסווג", s:0}), "נוסף שינוי חדש"));
-  const goal = document.createElement("div"); goal.className="goal";
-  goal.innerHTML = `<h3>פערים פוטנציאליים — לוודא שנכנסו למטריצת הבדיקות</h3>`;
-  goal.appendChild(buildTable(D.gaps,[
-    {h:"הפער", render:it=>editableCell(it,"t","פער")},
-    {h:"אחראי", render:it=>ownerBtn(it,"o",lbl)},
+  const gapsH = document.createElement("h3");
+  gapsH.style.cssText = "font:700 15px/1.4 'Heebo','Inter',sans-serif;color:var(--ink);margin:22px 0 8px";
+  gapsH.textContent = 'פערים פוטנציאליים — "להגדיל ראש" (עדי מוסיף שוטף)';
+  chSec.appendChild(gapsH);
+  chSec.appendChild(buildTable(D.gaps,[
+    {h:"פער פוטנציאלי", render:it=>editableCell(it,"t","פער")},
+    {h:"אחראי לבירור", render:it=>ownerBtn(it,"o",lbl)},
     {h:"סטטוס", render:it=>statusPill(it,lbl)}
   ],lbl));
-  goal.appendChild(addRowBtn("הוספת פער", D.gaps,
-    ()=>({t:"פער חדש — לחצו לעריכה", o:UNASSIGNED, s:0}), "נוסף פער חדש"));
-  chSec.appendChild(goal);
+  chSec.appendChild(addRowBtn("הוספת פער", D.gaps,
+    ()=>({t:"פער חדש — לחצו לעריכה", o:"עדי", s:0}), "נוסף פער חדש"));
 
   /* --- בדיקות --- */
-  const qaSec = addSec(secHead("sec-qa","test","","תחום 2 · בדיקות — מטריצת סנריו","אחראית: ניתי (מלווה: תומר)",false,"לכל סנריו אחראי אחד, יעד ושיקוף ללקוח"),
-    buildTable(D.qa,[
-      {h:"הסנריו / המשימה", render:it=>editableCell(it,"t","סנריו")},
+  const qaSec = addSec(secHead("sec-qa","test","","תחום 2 · בדיקות — מטריצת סנריו","אחראית: ניתי (QA) · מלווה: תומר",false,"לכל סנריו אחראי אחד מהגילוי ועד תיקון, אימות ושיקוף — לא נופל בין הכיסאות."));
+  const qaGoal = document.createElement("div"); qaGoal.className="goal"; qaGoal.style.margin="0 0 14px";
+  qaGoal.innerHTML = `<b>התוצר:</b> מטריצת סנריו משוקפת ללקוח — הלקוח רואה מה בודקים, נותן פידבק, וההערות שלו נכנסות לטבלה. <b>למה זה חשוב:</b> שלא יקרה שרגע לפני עלייה הלקוח שואל "מה עם זה?" ואף אחד לא מכיר. <b>איך לגשת:</b> ב-13.7 מפרסמים ללקוח את המטריצה, ממנים אחראי לכל סנריו, ומגדירים "הכרזנו סיימנו" ל-31.8.`;
+  qaSec.appendChild(qaGoal);
+  qaSec.appendChild(buildTable(D.qa,[
+      {h:"סנריו / משימת בדיקה", render:it=>editableCell(it,"t","סנריו")},
       {h:"אחראי", render:it=>ownerBtn(it,"o",lbl)},
       {h:"יעד", render:it=>dueCell(it,"d")},
       {h:"שיקוף ללקוח", render:it=>editableCell(it,"c","שיקוף")},
@@ -559,12 +568,15 @@ function renderDash(main){
 
   /* --- ממשקים --- */
   const ilbl = it => it.n || "";
-  const ifSec = addSec(secHead("sec-interfaces","plug","","תחום 3 · ממשקים צד ג'","אחראי: טרם מונה — פער!",true,"ביפרו · ישראייר · Price Box · ALP · LDS · שוברי סוכן"),
-    buildTable(D.interfaces,[
-      {h:"הממשק", render:it=>editableCell(it,"n","שם ממשק")},
+  const ifSec = addSec(secHead("sec-interfaces","plug","","תחום 3 · ממשקים צד ג'","אחראי: ⚠ טרם מונה — פער פתוח",true,"קשר יומי עם כל צד ג', כולל \"היום לא קרה כלום\". שינוי אצלם = בדיקה אצלנו."));
+  const ifGoal = document.createElement("div"); ifGoal.className="goal"; ifGoal.style.margin="0 0 14px";
+  ifGoal.innerHTML = `<b>התוצר:</b> סטטוס יומי פר ממשק + וידוא יזום (פעמיים!) שכל ההכנות בצד שלנו בוצעו. <b>דגשים:</b> סביבות בדיקה זהות לייצור, טיפול בשגיאות וגיבוי, בדיקת נפחים/עומסים, אנשי קשר וזמני תגובה מוסכמים, ומעקב שינויי API בצד שלהם. <b>איך לגשת:</b> למנות אחראי אחד (השבוע!), לקבוע ערוץ יומי, ולנהל את הטבלה כמקור אמת.`;
+  ifSec.appendChild(ifGoal);
+  ifSec.appendChild(buildTable(D.interfaces,[
+      {h:"ממשק", render:it=>editableCell(it,"n","שם ממשק")},
       {h:"מצב נוכחי", render:it=>editableCell(it,"st","מצב")},
       {h:"אחראי", render:it=>ownerBtn(it,"o",ilbl)},
-      {h:"יעד", render:it=>dueCell(it,"d")},
+      {h:"יעד בדיקה מקצה לקצה", render:it=>dueCell(it,"d")},
       {h:"הפעולה הבאה", render:it=>editableCell(it,"nx","פעולה הבאה")},
       {h:"סטטוס", render:it=>statusPill(it,ilbl)}
     ],ilbl));
@@ -572,9 +584,12 @@ function renderDash(main){
     ()=>({n:"ממשק חדש", st:"", o:UNASSIGNED, d:"", nx:"", s:0}), "נוסף ממשק חדש"));
 
   /* --- הדרכות --- */
-  const trSec = addSec(secHead("sec-training","grad","","תחום 4 · הדרכות","אחראית: דניס",false,"דפי עזר לפי תהליך העבודה של הלקוח — לא גנרי"),
-    buildTable(D.training,[
-      {h:"המשימה", render:it=>editableCell(it,"t","הדרכה")},
+  const trSec = addSec(secHead("sec-training","grad","","תחום 4 · הדרכות","אחראית: דניס",false,"הדרכה בלי דף מסכם לפי תהליך העבודה של הלקוח — לא נספרת כהושלמה."));
+  const trGoal = document.createElement("div"); trGoal.className="goal"; trGoal.style.margin="0 0 14px";
+  trGoal.innerHTML = `<b>התוצר:</b> לכל הדרכה — סיכום איך היה, דף עזר ללקוח לפי תהליך העבודה שלו (לא גנרי!) שנשלח מיד אחרי, הקלטה, ומנגנון וידוא הבנה. <b>למה זה חשוב:</b> הדף הוא מה שיציל את המשתמש ברגע האמת אחרי העלייה לאוויר. <b>איך לגשת:</b> לבנות עכשיו את רשימת ההדרכות שנותרו, להכין דפי עזר מראש, ולסגור את כולן לפני 14.9.`;
+  trSec.appendChild(trGoal);
+  trSec.appendChild(buildTable(D.training,[
+      {h:"משימה", render:it=>editableCell(it,"t","הדרכה")},
       {h:"אחראי", render:it=>ownerBtn(it,"o",lbl)},
       {h:"יעד", render:it=>dueCell(it,"d")},
       {h:"סטטוס", render:it=>statusPill(it,lbl)}
@@ -583,17 +598,22 @@ function renderDash(main){
     ()=>({t:"הדרכה חדשה — לחצו לעריכה", o:"דניס", d:"", s:0}), "נוספה הדרכה חדשה"));
 
   /* --- בקרה --- */
-  const govSec = addSec(secHead("sec-gov","activity","","תחום 5 · בקרה וקצב","אחראית: נלי (מלווה: סיוון)",false,"דיילי, ישיבה שבועית ודיווח לאורלי"),
-    buildTable(D.governance,[
-      {h:"המשימה", render:it=>editableCell(it,"t","בקרה")},
+  const govSec = addSec(secHead("sec-gov","activity","","תחום 5 · בקרה וקצב","אחראית: נלי (PM) · מלווה: סיוון",false,"הקצב הוא המנגנון שמונע את ה\"בלאגן\": כל אחד יודע מתי הוא מדווח ועל מה."));
+  const govGoal = document.createElement("div"); govGoal.className="goal"; govGoal.style.margin="0 0 14px";
+  govGoal.innerHTML = `<b>המנגנון:</b> ① דיילי 15 דק' — כל בעל תחום: מה זז, מה תקוע. ② ישיבת בקרה שבועית — מעבר על הדשבורד הזה. ③ דיווח שבועי לאורלי — רמזור + חסמים להחלטתה בלבד. ④ Go/No-Go ב-15.9 עם קריטריונים מראש (למטה). <b>עיקרון:</b> חסם שלא שוחרר תוך 48 שעות — עולה לאורלי אוטומטית.`;
+  govSec.appendChild(govGoal);
+  govSec.appendChild(buildTable(D.governance,[
+      {h:"משימת בקרה", render:it=>editableCell(it,"t","בקרה")},
       {h:"אחראי", render:it=>ownerBtn(it,"o",lbl)},
       {h:"יעד", render:it=>dueCell(it,"d")},
       {h:"סטטוס", render:it=>statusPill(it,lbl)}
     ],lbl));
   govSec.appendChild(addRowBtn("הוספת משימת בקרה", D.governance,
     ()=>({t:"משימה חדשה — לחצו לעריכה", o:"נלי", d:"", s:0}), "נוספה משימת בקרה חדשה"));
-  const gng = document.createElement("div"); gng.className="goal";
-  gng.innerHTML = `<h3>צ'קליסט Go/No-Go — 15.9 עם אורלי והלקוח</h3>`;
+  const govGrid = document.createElement("div");
+  govGrid.style.cssText = "display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:12px;margin-top:14px";
+  const gng = document.createElement("div"); gng.className="goal"; gng.style.margin="0";
+  gng.innerHTML = `<h3>קריטריוני Go/No-Go — 15.9 עם אורלי והלקוח</h3>`;
   const gwrap = document.createElement("div");
   D.gonogo.forEach(g=>{
     const row = document.createElement("div"); row.className = "check" + (g.done?" done":"");
@@ -605,17 +625,26 @@ function renderDash(main){
   gng.appendChild(gwrap);
   gng.appendChild(addRowBtn("הוספת קריטריון", D.gonogo,
     ()=>({t:"קריטריון חדש — לחצו לעריכה", done:false}), "נוסף קריטריון Go/No-Go"));
-  govSec.appendChild(gng);
-  const hyper = document.createElement("div"); hyper.className="goal";
-  hyper.innerHTML = `<h3>ליווי מוגבר אחרי העלייה (Hypercare)</h3>
-    <div>שבועיים ראשונים אחרי 30.9: זמינות מוגברת של כל הצוות, ערוץ תקלות ישיר ללקוח, סבב יומי על תקלות פתוחות, ותוכנית ידועה מראש — מה עושים אם משהו קריטי נשבר ביום הראשון.</div>`;
-  govSec.appendChild(hyper);
+  const hyper = document.createElement("div"); hyper.className="goal"; hyper.style.margin="0";
+  hyper.innerHTML = `<h3>תוכנית ליווי מוגבר אחרי העלייה (Hypercare) — 30.9 ואילך</h3>`;
+  const hwrap = document.createElement("ul");
+  hwrap.style.cssText = "margin:0;padding-inline-start:18px;line-height:1.6";
+  D.hypercare.forEach(hc=>{
+    const li = document.createElement("li"); li.style.marginBottom="5px";
+    li.appendChild(editableCell(hc,"t","סעיף Hypercare"));
+    hwrap.appendChild(li);
+  });
+  hyper.appendChild(hwrap);
+  hyper.appendChild(addRowBtn("הוספת סעיף", D.hypercare,
+    ()=>({t:"סעיף חדש — לחצו לעריכה"}), "נוסף סעיף לתוכנית ה-Hypercare"));
+  govGrid.append(gng, hyper);
+  govSec.appendChild(govGrid);
 
   /* --- סיכונים --- */
-  const rkSec = addSec(secHead("sec-risks","alert","orange","סיכונים מרכזיים",null,false,"מה עלול להפיל את ה-30.9 — ומה עושים שלא"),
+  const rkSec = addSec(secHead("sec-risks","alert","orange","סיכונים מרכזיים",null,false,"סיכון שהתממש הופך לחסם ועולה לטבלת החסמים למעלה."),
     buildTable(D.risks,[
       {h:"הסיכון", render:it=>editableCell(it,"t","סיכון")},
-      {h:"מה עושים", render:it=>editableCell(it,"m","מיטיגציה")},
+      {h:"פעולת מנע / מיתון", render:it=>editableCell(it,"m","מיטיגציה")},
       {h:"אחראי", render:it=>ownerBtn(it,"o",lbl)},
       {h:"סטטוס", render:it=>statusPill(it,lbl)}
     ],lbl));
@@ -627,7 +656,7 @@ function renderDash(main){
     ["שינויים","changes","#sec-changes"],["פערים","gaps","#sec-changes"],["בדיקות","qa","#sec-qa"],["ממשקים","interfaces","#sec-interfaces"],
     ["הדרכות","training","#sec-training"],["בקרה","governance","#sec-gov"],["חסמים","blockers","#sec-blockers"],["החלטות","decisions","#sec-decisions"]
   ];
-  const allSec = addSec(secHead("sec-all","grid","","כל המשימות — תצוגה מרוכזת",null,false,"טבלה מאוחדת מכל התחומים, ממוינת לפי יעד"));
+  const allSec = addSec(secHead("sec-all","grid","","כל המשימות — תצוגה מרוכזת",null,false,"כל המשימות מכל התחומים בטבלה אחת, ממוינות לפי תאריך יעד. עריכה כאן מתעדכנת בתחום המקורי."));
   const filt = document.createElement("div"); filt.className="filters";
   filt.appendChild(fbtn("הכל", allTasksFilter.domain==="הכל", ()=>{ allTasksFilter.domain="הכל"; renderAll(); }));
   DOMAINS.forEach(([name])=> filt.appendChild(fbtn(name, allTasksFilter.domain===name, ()=>{ allTasksFilter.domain=name; renderAll(); })));
@@ -664,6 +693,11 @@ function renderDash(main){
     tr.append(t1,t2,t3,t4,t5); atb.appendChild(tr);
   });
   at.appendChild(atb); allWrap.appendChild(at); allSec.appendChild(allWrap);
+
+  const foot = document.createElement("footer");
+  foot.style.cssText = "margin-top:50px;font-size:12px;color:var(--dim);border-top:1px solid var(--line);padding-top:14px;line-height:1.6";
+  foot.textContent = 'נבנה עבור סיוון · אחראית תפעול · משרת את אורלי בתהליך בקרה, מעקב ושחרור חסמים · מקור נתונים: אקסל "סיטונאות מוצר" של נלי (יולי 2026).';
+  main.appendChild(foot);
 }
 
 async function load(showErrors){
@@ -672,8 +706,17 @@ async function load(showErrors){
     if(!r.ok) throw new Error(r.status);
     DATA = await r.json();
     DATA.gonogo = (DATA.gonogo||[]).map(g=> typeof g==="string" ? {t:g,done:false} : g);
+    if(!DATA.hypercare || !DATA.hypercare.length) DATA.hypercare = [
+      {t:"שבועיים ראשונים: איש צוות זמין ללקוח בזמן אמת בכל שעות הפעילות"},
+      {t:"ערוץ תקלות ייעודי + זמן תגובה פנימי מוסכם לתקלה חוסמת: טיפול מיידי"},
+      {t:"שיחת סטטוס יומית עם הלקוח בשבוע הראשון"},
+      {t:"דפי העזר של דניס זמינים לכל משתמש אצל הלקוח"}
+    ];
+    DATA.hypercare = DATA.hypercare.map(h=> typeof h==="string" ? {t:h} : h);
     renderAll();
     setSaveState("saved","✓ נשמר ומשותף");
+    const lu = document.getElementById("lastUpd");
+    if(lu) lu.textContent = (DATA.history && DATA.history[0] && DATA.history[0].ts) || nowStamp();
     return true;
   }catch(e){
     if(showErrors) setSaveState("pending","טוען…");
