@@ -31,15 +31,16 @@ header .sub{font-size:13px;color:#E5D8FC;margin-top:4px}
 .rag-dot{display:inline-block;width:13px;height:13px;border-radius:50%;vertical-align:middle;margin-left:8px}
 
 nav{position:sticky;top:0;z-index:30;background:var(--app-bg);border-bottom:1px solid var(--line)}
-nav .wrap{display:flex;align-items:center;gap:3px;flex-wrap:wrap;padding-top:9px;padding-bottom:9px}
-.tab{font-family:inherit;font-size:13px;font-weight:600;border:1px solid var(--line);background:#fff;color:var(--muted);border-radius:6px;padding:6px 14px;cursor:pointer;transition:all .15s}
+nav .wrap{display:flex;align-items:center;gap:3px;flex-wrap:nowrap;padding-top:9px;padding-bottom:9px;overflow-x:auto}
+.tab{font-family:inherit;font-size:12.5px;font-weight:600;border:1px solid var(--line);background:#fff;color:var(--muted);border-radius:6px;padding:5px 11px;cursor:pointer;transition:all .15s;white-space:nowrap;flex:none}
 .tab.active{background:var(--brand);border-color:var(--brand);color:#fff}
 .tab:not(.active):hover{border-color:var(--brand);color:var(--brand)}
 .tabsep{width:1px;height:22px;background:var(--line);margin:0 8px}
-nav a{font-size:12.5px;font-weight:500;color:var(--muted);text-decoration:none;padding:5px 10px;border-radius:14px;transition:background .15s}
+#anchors{display:flex;gap:1px;flex:1;min-width:0;overflow-x:auto;white-space:nowrap}
+nav a{font-size:12px;font-weight:500;color:var(--muted);text-decoration:none;padding:5px 7px;border-radius:14px;transition:background .15s;white-space:nowrap;flex:none}
 nav a:hover{background:var(--brand-bg);color:var(--brand)}
 nav .spacer{flex:1}
-.navbtn{font-family:inherit;font-size:13px;font-weight:500;border:1px solid var(--line);background:#fff;border-radius:6px;padding:6px 13px;cursor:pointer;color:var(--muted);transition:all .15s}
+.navbtn{font-family:inherit;font-size:12.5px;font-weight:500;border:1px solid var(--line);background:#fff;border-radius:6px;padding:5px 10px;cursor:pointer;color:var(--muted);transition:all .15s;white-space:nowrap;flex:none}
 .navbtn:hover{border-color:var(--brand);color:var(--brand)}
 .navbtn:disabled{opacity:.4;cursor:default}
 .navbtn:disabled:hover{border-color:var(--line);color:var(--muted)}
@@ -146,12 +147,11 @@ td.actions{width:34px;white-space:nowrap}
 
 <nav><div class="wrap">
   <button class="tab active" id="tabDash">דשבורד</button>
-  <button class="tab" id="tabHist">היסטוריית עדכונים</button>
+  <button class="tab" id="tabHist">היסטוריה</button>
   <span class="tabsep"></span>
   <span id="anchors">
     <a href="#sec-decisions">שולחן אורלי</a><a href="#sec-blockers">חסמים</a><a href="#sec-milestones">אבני דרך</a><a href="#sec-changes">שינויים</a><a href="#sec-qa">בדיקות</a><a href="#sec-interfaces">ממשקים</a><a href="#sec-training">הדרכות</a><a href="#sec-gov">בקרה</a><a href="#sec-risks">סיכונים</a><a href="#sec-all">כל המשימות</a>
   </span>
-  <span class="spacer"></span>
   <span id="saveState">✓ נשמר ומשותף</span>
   <button class="navbtn" id="undoBtn" disabled>↩ ביטול פעולה</button>
   <button class="navbtn" id="refreshBtn">⟳ רענון</button>
@@ -395,7 +395,7 @@ function setView(v){
   view = v;
   document.getElementById("tabDash").className = "tab" + (v==="dash"?" active":"");
   document.getElementById("tabHist").className = "tab" + (v==="hist"?" active":"");
-  document.getElementById("anchors").style.display = v==="dash" ? "" : "none";
+  document.getElementById("anchors").style.visibility = v==="dash" ? "" : "hidden";
   renderAll();
   scrollTo(0,0);
 }
