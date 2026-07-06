@@ -63,8 +63,8 @@ table{width:100%;border-collapse:collapse;min-width:720px;font-size:13.5px}
 th{background:var(--brand-bg);font-size:12px;font-weight:600;letter-spacing:.03em;color:var(--muted);text-align:right;padding:9px 12px;border-bottom:1px solid var(--line);white-space:nowrap}
 td{padding:9px 12px;border-bottom:1px solid var(--row);vertical-align:top;color:var(--body);line-height:1.5;font-variant-numeric:tabular-nums}
 tr:last-child td{border-bottom:none}
-tr.deleted td{text-decoration:line-through;color:var(--dim)}
-tr.deleted .pill,tr.deleted .ownerbtn{opacity:.5}
+tr.deleted td,tr.deleted td [contenteditable],tr.deleted td .due{text-decoration:line-through;text-decoration-thickness:1px;text-decoration-color:#B8B2BE;color:var(--dim)}
+tr.deleted .pill,tr.deleted .ownerbtn{opacity:.5;text-decoration:none}
 td.actions{width:34px;white-space:nowrap}
 .xbtn{border:none;background:none;cursor:pointer;color:#C0BCC4;font-size:15px;border-radius:6px;padding:2px 6px;transition:color .15s}
 .xbtn:hover{color:var(--red-bright)}
@@ -101,11 +101,17 @@ td.actions{width:34px;white-space:nowrap}
 #popover button.current{background:#F0EEF4;font-weight:700}
 
 .cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px}
-.card{background:#fff;border:1px solid var(--line);border-radius:10px;padding:11px 13px;box-shadow:0 0 20px rgba(49,19,79,.06)}
-.card .d{color:var(--brand);font-size:12px;font-weight:700;letter-spacing:.03em;margin-bottom:4px}
+.card{position:relative;background:#fff;border:1px solid var(--line);border-radius:10px;padding:11px 13px;box-shadow:0 0 20px rgba(49,19,79,.06)}
+.card .d{color:var(--brand);font-size:12px;font-weight:700;letter-spacing:.03em;margin-bottom:4px;padding-inline-end:22px}
 .card .desc{font-size:13px;line-height:1.45}
-.card.done{opacity:.62}
 .card .row2{display:flex;justify-content:space-between;align-items:center;margin-top:10px;gap:6px}
+.card .delx{position:absolute;top:6px;left:6px}
+.card.done{background:linear-gradient(160deg,#F4FCF6,#E4F7EA);border-color:#B9E7C6}
+.card.done .d{color:var(--green)}
+.donebadge{display:inline-flex;align-items:center;gap:5px;background:var(--green);color:#fff;font-size:11px;font-weight:700;border-radius:999px;padding:2px 10px;margin-bottom:7px}
+.mech{list-style:none;margin:6px 0 0;padding:0}
+.mech li{display:flex;gap:9px;margin-bottom:7px}
+.mech .n{flex:none;width:20px;height:20px;border-radius:50%;background:var(--brand-bg2);color:var(--brand-dark);font-weight:700;font-size:12px;display:inline-flex;align-items:center;justify-content:center;margin-top:2px}
 
 .goal{background:#fff;border:1px solid var(--line);border-inline-start:4px solid var(--brand);border-radius:8px;padding:11px 15px;margin-top:14px;font-size:13.5px;color:var(--muted);line-height:1.65}
 .goal h3{font-size:14px;color:var(--brand);margin-bottom:8px}
@@ -146,15 +152,13 @@ td.actions{width:34px;white-space:nowrap}
 </header>
 
 <nav><div class="wrap">
-  <button class="tab active" id="tabDash">דשבורד</button>
-  <button class="tab" id="tabHist">היסטוריה</button>
-  <span class="tabsep"></span>
   <span id="anchors">
     <a href="#sec-decisions">שולחן אורלי</a><a href="#sec-blockers">חסמים</a><a href="#sec-milestones">אבני דרך</a><a href="#sec-changes">שינויים</a><a href="#sec-qa">בדיקות</a><a href="#sec-interfaces">ממשקים</a><a href="#sec-training">הדרכות</a><a href="#sec-gov">בקרה</a><a href="#sec-risks">סיכונים</a><a href="#sec-all">כל המשימות</a>
   </span>
   <span id="saveState">✓ נשמר ומשותף</span>
-  <button class="navbtn" id="undoBtn" disabled>↩ ביטול פעולה</button>
-  <button class="navbtn" id="refreshBtn">⟳ רענון</button>
+  <span class="tabsep"></span>
+  <button class="tab active" id="tabDash">דשבורד</button>
+  <button class="tab" id="tabHist">היסטוריה</button>
 </div></nav>
 
 <div class="wrap" id="main"></div>
@@ -212,12 +216,10 @@ function logAction(text){
 function snapshot(){
   undoStack.push(JSON.stringify(DATA));
   if(undoStack.length > 50) undoStack.shift();
-  document.getElementById("undoBtn").disabled = false;
 }
 function undo(){
   if(!undoStack.length) return;
   DATA = JSON.parse(undoStack.pop());
-  document.getElementById("undoBtn").disabled = !undoStack.length;
   renderAll(); queueSave();
 }
 function queueSave(){
@@ -281,7 +283,7 @@ function editableCell(item, field, label){
   span.addEventListener("blur", ()=>{
     const val = span.textContent.trim();
     if(val !== before.trim()){
-      change(`עודכן ${label}: ${val.slice(0,60)}`, ()=>{ item[field] = val; });
+      change(`עודכן ${label}: ${val.slice(0,60)}`, ()=>{ item[field] = val; if(item.s===2) item.bt = Date.now(); });
     }
   });
   span.addEventListener("keydown", e=>{ if(e.key === "Enter"){ e.preventDefault(); span.blur(); } });
@@ -294,7 +296,11 @@ function statusPill(item, itemLabel){
   b.innerHTML = `<span class="dot"></span>${esc(STATUSES[s])}<span class="arr">▾</span>`;
   b.onclick = ()=> openMenu(b, STATUSES, STATUSES[s], pick=>{
     const ns = STATUSES.indexOf(pick);
-    if(ns !== item.s) change(`סטטוס עודכן ל"${pick}" — ${itemLabel(item).slice(0,70)}`, ()=>{ item.s = ns; });
+    if(ns !== item.s) change(`סטטוס עודכן ל-${pick} — ${itemLabel(item).slice(0,70)}`, ()=>{
+      item.s = ns;
+      if(ns === 2) item.bt = Date.now();
+      else { delete item.bt; delete item.esc; }
+    });
   });
   return b;
 }
@@ -309,7 +315,7 @@ function ownerBtn(item, field, itemLabel){
       if(!pick) return;
       if(pick.includes("גלאור")){ alert("האחראי חייב להיות בן אדם — לא שם החברה."); return; }
     }
-    if(pick !== cur) change(`אחראי עודכן ל"${pick}" — ${itemLabel(item).slice(0,70)}`, ()=>{ item[field] = pick; });
+    if(pick !== cur) change(`אחראי עודכן ל-${pick} — ${itemLabel(item).slice(0,70)}`, ()=>{ item[field] = pick; });
   });
   return b;
 }
@@ -321,19 +327,28 @@ function dueCell(item, field){
   td.appendChild(span);
   return td;
 }
-function deleteBtn(item, itemLabel){
+function isPristine(it){
+  return ["t","n","w","d","a","m","c","st","nx","dec"].every(f=>{
+    const v = it[f];
+    return !v || String(v).includes("לחצו לעריכה") || v === "לסווג";
+  });
+}
+function deleteBtn(item, itemLabel, srcArr){
   const b = document.createElement("button");
   if(item.x){
     b.className = "xbtn restore"; b.textContent = "↩"; b.title = "שחזור שורה";
     b.onclick = ()=> change(`שוחזרה שורה — ${itemLabel(item).slice(0,70)}`, ()=>{ delete item.x; });
+  }else if(srcArr && isPristine(item)){
+    b.className = "xbtn"; b.textContent = "✕"; b.title = "מחיקת שורה ריקה";
+    b.onclick = ()=> change("נמחקה שורה ריקה", ()=>{ const i = srcArr.indexOf(item); if(i > -1) srcArr.splice(i,1); });
   }else{
-    b.className = "xbtn"; b.textContent = "✕"; b.title = "ביטול שורה (ניתן לשחזר)";
+    b.className = "xbtn"; b.textContent = "✕"; b.title = "ביטול שורה (ניתן לשחזר בתחתית הדף, בפילטר שורות שבוטלו)";
     b.onclick = ()=> change(`בוטלה שורה — ${itemLabel(item).slice(0,70)}`, ()=>{ item.x = true; });
   }
   return b;
 }
 
-function buildTable(items, cols, itemLabel){
+function buildTable(items, cols, itemLabel, srcArr){
   const wrap = document.createElement("div"); wrap.className = "tblwrap";
   const t = document.createElement("table");
   const thead = document.createElement("thead");
@@ -342,16 +357,15 @@ function buildTable(items, cols, itemLabel){
   hr.appendChild(document.createElement("th"));
   thead.appendChild(hr); t.appendChild(thead);
   const tb = document.createElement("tbody");
-  items.forEach(item=>{
+  items.filter(item=>!item.x).forEach(item=>{
     const tr = document.createElement("tr");
-    if(item.x) tr.className = "deleted";
     cols.forEach(c=>{
       const node = c.render(item);
       if(node.tagName === "TD") tr.appendChild(node);
       else{ const td=document.createElement("td"); td.appendChild(node); tr.appendChild(td); }
     });
     const tda = document.createElement("td"); tda.className="actions";
-    tda.appendChild(deleteBtn(item, itemLabel)); tr.appendChild(tda);
+    tda.appendChild(deleteBtn(item, itemLabel, srcArr)); tr.appendChild(tda);
     tb.appendChild(tr);
   });
   t.appendChild(tb); wrap.appendChild(t);
@@ -466,7 +480,10 @@ function renderDash(main){
   };
 
   /* --- שולחן אורלי --- */
-  const decSec = addSec(secHead("sec-decisions","crown","","שולחן אורלי — החלטות פתוחות",null,false,"ההחלטות שרק אורלי יכולה לסגור. החלטה שהתקבלה — לתעד בעמודת ההחלטה ולסמן \"הושלם\"."));
+  const decSec = addSec(secHead("sec-decisions","crown","","שולחן אורלי — החלטות פתוחות",null,false,"ההחלטות שרק אורלי יכולה לסגור. החלטה שהתקבלה — לתעד בעמודת ההחלטה ולסמן הושלם."));
+  const decGoal = document.createElement("div"); decGoal.className="goal"; decGoal.style.margin="0 0 12px";
+  decGoal.innerHTML = `<b>מתי מוסיפים החלטה:</b> כל מי שנתקל בנושא שדורש הכרעה של אורלי, התערבות שלה או שיקוף מיידי — מוסיף שורה מיד, עם למה זה דחוף ותאריך יעד.`;
+  decSec.appendChild(decGoal);
   const decFilt = document.createElement("div"); decFilt.className="minifilt";
   decFilt.appendChild(fbtn("בעבודה", decFilter==="open", ()=>{ decFilter="open"; renderAll(); }));
   decFilt.appendChild(fbtn("הושלמו", decFilter==="done", ()=>{ decFilter="done"; renderAll(); }));
@@ -479,7 +496,7 @@ function renderDash(main){
   if(decEmpty){
     const p = document.createElement("div");
     p.style.cssText = "background:#fff;border:1px solid var(--line);border-radius:10px;padding:16px;color:var(--dim)";
-    p.textContent = decFilter==="done" ? "עוד לא הושלמו החלטות — כשתסמנו החלטה כ\"הושלם\" היא תופיע כאן" : "אין החלטות פתוחות 🎉";
+    p.textContent = decFilter==="done" ? "עוד לא הושלמו החלטות — כשהחלטה תסומן הושלם היא תופיע כאן" : "אין החלטות פתוחות 🎉";
     decSec.appendChild(p);
   }else{
     decSec.appendChild(buildTable(decs,[
@@ -488,47 +505,53 @@ function renderDash(main){
       {h:"יעד", render:it=>dueCell(it,"d")},
       {h:"סטטוס", render:it=>statusPill(it,lbl)},
       {h:"ההחלטה שהתקבלה", render:it=>editableCell(it,"dec","ההחלטה שהתקבלה")}
-    ],lbl));
+    ],lbl,D.decisions));
   }
   decSec.appendChild(addRowBtn("הוספת החלטה לשולחן אורלי", D.decisions,
     ()=>({t:"החלטה חדשה — לחצו לעריכה", w:"", d:"", dec:"", s:0}), "נוספה החלטה חדשה לשולחן אורלי"));
 
   /* --- חסמים --- */
-  const blkSec = addSec(secHead("sec-blockers","alert","red","חסמים פתוחים — דורשים החלטה / הסלמה",null,false,"השולחן של אורלי: רק מה שתקוע ודורש התערבות. חסם שנפתר — לסמן \"הושלם\"."),
-    buildTable(D.blockers,[
+  const blkSec = addSec(secHead("sec-blockers","alert","red","חסמים פתוחים — דורשים החלטה / הסלמה",null,false,"מה שתקוע עכשיו ועוצר עבודה. חסם שנפתר — לסמן הושלם."));
+  const blkGoal = document.createElement("div"); blkGoal.className="goal"; blkGoal.style.margin="0 0 12px";
+  blkGoal.innerHTML = `<b>מהו חסם פתוח:</b> משימה שלא יכולה להתקדם כי משהו עוצר אותה — החלטה חסרה, גורם חיצוני או תלות בצוות אחר. <b>מתי מוסיפים חסם:</b> ברגע שמזהים שעבודה נעצרה ואי אפשר לשחרר אותה לבד — לא מחכים לישיבה. <b>ההבדל משולחן אורלי:</b> חסם הוא בעיה תפעולית שאחראי מסוים צריך לשחרר; לשולחן אורלי עולים רק נושאים שדורשים הכרעה של אורלי עצמה. חסם שנשאר בסטטוס חסום 48 שעות עבודה (לא כולל סוף שבוע) בלי טיפול — עולה לשולחן אורלי אוטומטית.`;
+  blkSec.appendChild(blkGoal);
+  blkSec.appendChild(buildTable(D.blockers,[
       {h:"החסם", render:it=>editableCell(it,"t","חסם")},
       {h:"אחראי לשחרור", render:it=>ownerBtn(it,"o",lbl)},
       {h:"יעד", render:it=>dueCell(it,"d")},
       {h:"הפעולה הנדרשת / ההחלטה", render:it=>editableCell(it,"a","פעולה")},
       {h:"סטטוס", render:it=>statusPill(it,lbl)}
-    ],lbl));
+    ],lbl,D.blockers));
   blkSec.appendChild(addRowBtn("הוספת חסם", D.blockers,
     ()=>({t:"חסם חדש — לחצו לעריכה", o:UNASSIGNED, d:"", a:"", s:0}), "נוסף חסם חדש"));
 
   /* --- אבני דרך --- */
   const msSec = addSec(secHead("sec-milestones","flag","","אבני דרך — תכנון לאחור מ-30.9",null,false,"כל אבן דרך היא שער: לא עוברים הלאה בלי לסגור אותה או להחליט במודע לדחות."));
   const cards = document.createElement("div"); cards.className="cards";
-  D.milestones.forEach(m=>{
+  D.milestones.filter(m=>!m.x).forEach(m=>{
     const c = document.createElement("div");
     c.className = "card" + (m.s===3?" done":"");
-    if(m.x) c.style.opacity=".4";
+    if(m.s===3){
+      const bd = document.createElement("div"); bd.className="donebadge"; bd.textContent = "✓ הושלמה";
+      c.appendChild(bd);
+    }
     const d = document.createElement("div"); d.className="d num";
     d.appendChild(editableCell(m,"d","תאריך אבן דרך"));
     const t = document.createElement("div"); t.className="desc";
     t.appendChild(editableCell(m,"t","אבן דרך"));
     const row = document.createElement("div"); row.className="row2";
     row.appendChild(statusPill(m,lbl));
-    row.appendChild(deleteBtn(m,lbl));
-    c.append(d,t,row); cards.appendChild(c);
+    const dx = deleteBtn(m,lbl,D.milestones); dx.classList.add("delx");
+    c.append(d,t,row,dx); cards.appendChild(c);
   });
   msSec.appendChild(cards);
   msSec.appendChild(addRowBtn("הוספת אבן דרך", D.milestones,
     ()=>({d:"", t:"אבן דרך חדשה — לחצו לעריכה", s:0}), "נוספה אבן דרך חדשה"));
 
   /* --- שינויים ופערים --- */
-  const chSec = addSec(secHead("sec-changes","list","","תחום 1 · שינויים ופערים","אחראי: עדי (מוצר)",false,"שרשימת השינויים תפסיק להיות זרם אינסופי ותהפוך לרשימה סגורה ומנוהלת."));
+  const chSec = addSec(secHead("sec-changes","list","","תחום 1 · שינויים ופערים","אחראי: עדי (מוצר)",false,"המטרה: שרשימת השינויים תפסיק להיות זרם אינסופי ותהפוך לרשימה סגורה ומנוהלת."));
   const chGoal = document.createElement("div"); chGoal.className="goal"; chGoal.style.marginTop="0";
-  chGoal.innerHTML = `<b>התוצר:</b> טבלת שינויים חיה — לכל שינוי: חובה/לא לעלייה לאוויר, סיכון (מה יכול להישבר), השפעה על flow הבדיקות ואיך בודקים. <b>למה זה חשוב:</b> בלי זה אין הקפאת שינויים ואין דרך לדעת מה מסכן את העלייה לאוויר. <b>איך לגשת:</b> לעבור על גרסאות 138–145 באקסל של נלי, לסווג כל פריט פתוח, ולהוסיף מדור "פערים שעוד יכולים לצוץ".`;
+  chGoal.innerHTML = `<b>התוצר:</b> טבלת שינויים חיה — לכל שינוי: חובה/לא לעלייה לאוויר, סיכון (מה יכול להישבר), השפעה על flow הבדיקות ואיך בודקים. <b>למה זה חשוב:</b> בלי זה אין הקפאת שינויים ואין דרך לדעת מה מסכן את העלייה לאוויר. <b>איך לגשת:</b> לעבור על גרסאות 138–145 באקסל של נלי, לסווג כל פריט פתוח, ולנהל בנוסף רשימה של פערים שעוד יכולים לצוץ — נושאים שטרם עלו אבל עלולים להתגלות בהמשך העבודה.`;
   chSec.appendChild(chGoal); chGoal.style.marginBottom="14px";
   chSec.appendChild(buildTable(D.changes,[
       {h:"השינוי / הפריט", render:it=>editableCell(it,"t","שינוי")},
@@ -536,25 +559,29 @@ function renderDash(main){
       {h:"יעד", render:it=>dueCell(it,"d")},
       {h:"חובה לעלייה לאוויר?", render:it=>editableCell(it,"m","סיווג")},
       {h:"סטטוס", render:it=>statusPill(it,lbl)}
-    ],lbl));
+    ],lbl,D.changes));
   chSec.appendChild(addRowBtn("הוספת שינוי", D.changes,
     ()=>({t:"שינוי חדש — לחצו לעריכה", o:"עדי", d:"", m:"לסווג", s:0}), "נוסף שינוי חדש"));
   const gapsH = document.createElement("h3");
-  gapsH.style.cssText = "font:700 15px/1.4 'Heebo','Inter',sans-serif;color:var(--ink);margin:22px 0 8px";
-  gapsH.textContent = 'פערים פוטנציאליים — "להגדיל ראש" (עדי מוסיף שוטף)';
+  gapsH.style.cssText = "font:700 15px/1.4 'Heebo','Inter',sans-serif;color:var(--ink);margin:22px 0 4px";
+  gapsH.textContent = 'פערים פוטנציאליים — עדי מוסיף שוטף';
   chSec.appendChild(gapsH);
+  const gapsNote = document.createElement("div");
+  gapsNote.style.cssText = "font-size:12.5px;color:var(--muted);margin:0 0 8px;line-height:1.6";
+  gapsNote.textContent = "המטרה: לזהות מראש נושאים שעוד לא עלו אבל עלולים להפוך לבעיה — כל פער שנרשם כאן מקבל אחראי לבירור ונסגר לפני שהוא הופך לחסם ברגע האחרון.";
+  chSec.appendChild(gapsNote);
   chSec.appendChild(buildTable(D.gaps,[
     {h:"פער פוטנציאלי", render:it=>editableCell(it,"t","פער")},
     {h:"אחראי לבירור", render:it=>ownerBtn(it,"o",lbl)},
     {h:"סטטוס", render:it=>statusPill(it,lbl)}
-  ],lbl));
+  ],lbl,D.gaps));
   chSec.appendChild(addRowBtn("הוספת פער", D.gaps,
     ()=>({t:"פער חדש — לחצו לעריכה", o:"עדי", s:0}), "נוסף פער חדש"));
 
   /* --- בדיקות --- */
   const qaSec = addSec(secHead("sec-qa","test","","תחום 2 · בדיקות — מטריצת סנריו","אחראית: ניתי (QA) · מלווה: תומר",false,"לכל סנריו אחראי אחד מהגילוי ועד תיקון, אימות ושיקוף — לא נופל בין הכיסאות."));
   const qaGoal = document.createElement("div"); qaGoal.className="goal"; qaGoal.style.margin="0 0 14px";
-  qaGoal.innerHTML = `<b>התוצר:</b> מטריצת סנריו משוקפת ללקוח — הלקוח רואה מה בודקים, נותן פידבק, וההערות שלו נכנסות לטבלה. <b>למה זה חשוב:</b> שלא יקרה שרגע לפני עלייה הלקוח שואל "מה עם זה?" ואף אחד לא מכיר. <b>איך לגשת:</b> ב-13.7 מפרסמים ללקוח את המטריצה, ממנים אחראי לכל סנריו, ומגדירים "הכרזנו סיימנו" ל-31.8.`;
+  qaGoal.innerHTML = `<b>התוצר:</b> מטריצת סנריו משוקפת ללקוח — הלקוח רואה מה בודקים, נותן פידבק, וההערות שלו נכנסות לטבלה. <b>למה זה חשוב:</b> שלא יקרה שרגע לפני עלייה הלקוח שואל על נושא שאף אחד לא מכיר. <b>איך לגשת:</b> ב-13.7 מפרסמים ללקוח את המטריצה, ממנים אחראי לכל סנריו, ומגדירים את נקודת הכרזנו סיימנו ל-31.8.`;
   qaSec.appendChild(qaGoal);
   qaSec.appendChild(buildTable(D.qa,[
       {h:"סנריו / משימת בדיקה", render:it=>editableCell(it,"t","סנריו")},
@@ -562,13 +589,13 @@ function renderDash(main){
       {h:"יעד", render:it=>dueCell(it,"d")},
       {h:"שיקוף ללקוח", render:it=>editableCell(it,"c","שיקוף")},
       {h:"סטטוס", render:it=>statusPill(it,lbl)}
-    ],lbl));
+    ],lbl,D.qa));
   qaSec.appendChild(addRowBtn("הוספת סנריו", D.qa,
     ()=>({t:"סנריו חדש — לחצו לעריכה", o:"ניתי", d:"", c:"", s:0}), "נוסף סנריו בדיקה חדש"));
 
   /* --- ממשקים --- */
   const ilbl = it => it.n || "";
-  const ifSec = addSec(secHead("sec-interfaces","plug","","תחום 3 · ממשקים צד ג'","אחראי: ⚠ טרם מונה — פער פתוח",true,"קשר יומי עם כל צד ג', כולל \"היום לא קרה כלום\". שינוי אצלם = בדיקה אצלנו."));
+  const ifSec = addSec(secHead("sec-interfaces","plug","","תחום 3 · ממשקים צד ג'","אחראי: ⚠ טרם מונה — פער פתוח",true,"קשר יומי עם כל צד ג', כולל דיווח שהיום לא קרה כלום. שינוי אצלם = בדיקה אצלנו."));
   const ifGoal = document.createElement("div"); ifGoal.className="goal"; ifGoal.style.margin="0 0 14px";
   ifGoal.innerHTML = `<b>התוצר:</b> סטטוס יומי פר ממשק + וידוא יזום (פעמיים!) שכל ההכנות בצד שלנו בוצעו. <b>דגשים:</b> סביבות בדיקה זהות לייצור, טיפול בשגיאות וגיבוי, בדיקת נפחים/עומסים, אנשי קשר וזמני תגובה מוסכמים, ומעקב שינויי API בצד שלהם. <b>איך לגשת:</b> למנות אחראי אחד (השבוע!), לקבוע ערוץ יומי, ולנהל את הטבלה כמקור אמת.`;
   ifSec.appendChild(ifGoal);
@@ -579,7 +606,7 @@ function renderDash(main){
       {h:"יעד בדיקה מקצה לקצה", render:it=>dueCell(it,"d")},
       {h:"הפעולה הבאה", render:it=>editableCell(it,"nx","פעולה הבאה")},
       {h:"סטטוס", render:it=>statusPill(it,ilbl)}
-    ],ilbl));
+    ],ilbl,D.interfaces));
   ifSec.appendChild(addRowBtn("הוספת ממשק", D.interfaces,
     ()=>({n:"ממשק חדש", st:"", o:UNASSIGNED, d:"", nx:"", s:0}), "נוסף ממשק חדש"));
 
@@ -593,21 +620,26 @@ function renderDash(main){
       {h:"אחראי", render:it=>ownerBtn(it,"o",lbl)},
       {h:"יעד", render:it=>dueCell(it,"d")},
       {h:"סטטוס", render:it=>statusPill(it,lbl)}
-    ],lbl));
+    ],lbl,D.training));
   trSec.appendChild(addRowBtn("הוספת הדרכה", D.training,
     ()=>({t:"הדרכה חדשה — לחצו לעריכה", o:"דניס", d:"", s:0}), "נוספה הדרכה חדשה"));
 
   /* --- בקרה --- */
-  const govSec = addSec(secHead("sec-gov","activity","","תחום 5 · בקרה וקצב","אחראית: נלי (PM) · מלווה: סיוון",false,"הקצב הוא המנגנון שמונע את ה\"בלאגן\": כל אחד יודע מתי הוא מדווח ועל מה."));
+  const govSec = addSec(secHead("sec-gov","activity","","תחום 5 · בקרה וקצב","אחראית: נלי (PM)",false,"הקצב הוא המנגנון שמונע בלאגן: כל אחד יודע מתי הוא מדווח ועל מה."));
   const govGoal = document.createElement("div"); govGoal.className="goal"; govGoal.style.margin="0 0 14px";
-  govGoal.innerHTML = `<b>המנגנון:</b> ① דיילי 15 דק' — כל בעל תחום: מה זז, מה תקוע. ② ישיבת בקרה שבועית — מעבר על הדשבורד הזה. ③ דיווח שבועי לאורלי — רמזור + חסמים להחלטתה בלבד. ④ Go/No-Go ב-15.9 עם קריטריונים מראש (למטה). <b>עיקרון:</b> חסם שלא שוחרר תוך 48 שעות — עולה לאורלי אוטומטית.`;
+  govGoal.innerHTML = `<h3>המנגנון</h3><ul class="mech">
+    <li><span class="n">1</span><span>דיילי 15 דק' — כל בעל תחום: מה זז, מה תקוע.</span></li>
+    <li><span class="n">2</span><span>ישיבת בקרה שבועית — מעבר על הדשבורד הזה.</span></li>
+    <li><span class="n">3</span><span>דיווח שבועי לאורלי — רמזור + חסמים להחלטתה בלבד.</span></li>
+    <li><span class="n">4</span><span>Go/No-Go ב-15.9 עם קריטריונים מראש (למטה).</span></li>
+  </ul><div style="margin-top:8px"><b>עיקרון:</b> חסם שלא שוחרר תוך 48 שעות — עולה לאורלי אוטומטית.</div>`;
   govSec.appendChild(govGoal);
   govSec.appendChild(buildTable(D.governance,[
       {h:"משימת בקרה", render:it=>editableCell(it,"t","בקרה")},
       {h:"אחראי", render:it=>ownerBtn(it,"o",lbl)},
       {h:"יעד", render:it=>dueCell(it,"d")},
       {h:"סטטוס", render:it=>statusPill(it,lbl)}
-    ],lbl));
+    ],lbl,D.governance));
   govSec.appendChild(addRowBtn("הוספת משימת בקרה", D.governance,
     ()=>({t:"משימה חדשה — לחצו לעריכה", o:"נלי", d:"", s:0}), "נוספה משימת בקרה חדשה"));
   const govGrid = document.createElement("div");
@@ -626,17 +658,17 @@ function renderDash(main){
   gng.appendChild(addRowBtn("הוספת קריטריון", D.gonogo,
     ()=>({t:"קריטריון חדש — לחצו לעריכה", done:false}), "נוסף קריטריון Go/No-Go"));
   const hyper = document.createElement("div"); hyper.className="goal"; hyper.style.margin="0";
-  hyper.innerHTML = `<h3>תוכנית ליווי מוגבר אחרי העלייה (Hypercare) — 30.9 ואילך</h3>`;
+  hyper.innerHTML = `<h3>תוכנית ליווי מוגבר אחרי העלייה לאוויר — 30.9 ואילך</h3>`;
   const hwrap = document.createElement("ul");
   hwrap.style.cssText = "margin:0;padding-inline-start:18px;line-height:1.6";
   D.hypercare.forEach(hc=>{
     const li = document.createElement("li"); li.style.marginBottom="5px";
-    li.appendChild(editableCell(hc,"t","סעיף Hypercare"));
+    li.appendChild(editableCell(hc,"t","סעיף ליווי מוגבר"));
     hwrap.appendChild(li);
   });
   hyper.appendChild(hwrap);
   hyper.appendChild(addRowBtn("הוספת סעיף", D.hypercare,
-    ()=>({t:"סעיף חדש — לחצו לעריכה"}), "נוסף סעיף לתוכנית ה-Hypercare"));
+    ()=>({t:"סעיף חדש — לחצו לעריכה"}), "נוסף סעיף לתוכנית הליווי המוגבר"));
   govGrid.append(gng, hyper);
   govSec.appendChild(govGrid);
 
@@ -647,14 +679,15 @@ function renderDash(main){
       {h:"פעולת מנע / מיתון", render:it=>editableCell(it,"m","מיטיגציה")},
       {h:"אחראי", render:it=>ownerBtn(it,"o",lbl)},
       {h:"סטטוס", render:it=>statusPill(it,lbl)}
-    ],lbl));
+    ],lbl,D.risks));
   rkSec.appendChild(addRowBtn("הוספת סיכון", D.risks,
     ()=>({t:"סיכון חדש — לחצו לעריכה", m:"", o:UNASSIGNED, s:0}), "נוסף סיכון חדש"));
 
   /* --- כל המשימות --- */
   const DOMAINS = [
     ["שינויים","changes","#sec-changes"],["פערים","gaps","#sec-changes"],["בדיקות","qa","#sec-qa"],["ממשקים","interfaces","#sec-interfaces"],
-    ["הדרכות","training","#sec-training"],["בקרה","governance","#sec-gov"],["חסמים","blockers","#sec-blockers"],["החלטות","decisions","#sec-decisions"]
+    ["הדרכות","training","#sec-training"],["בקרה","governance","#sec-gov"],["חסמים","blockers","#sec-blockers"],["החלטות","decisions","#sec-decisions"],
+    ["אבני דרך","milestones","#sec-milestones"],["סיכונים","risks","#sec-risks"]
   ];
   const allSec = addSec(secHead("sec-all","grid","","כל המשימות — תצוגה מרוכזת",null,false,"כל המשימות מכל התחומים בטבלה אחת, ממוינות לפי תאריך יעד. עריכה כאן מתעדכנת בתחום המקורי."));
   const filt = document.createElement("div"); filt.className="filters";
@@ -675,9 +708,15 @@ function renderDash(main){
     if(da && db) return da - db;
     return da ? -1 : db ? 1 : 0;
   });
+  if(allTasksFilter.deleted && !rows.length){
+    const p = document.createElement("div");
+    p.style.cssText = "background:#fff;border:1px solid var(--line);border-radius:10px;padding:16px;color:var(--dim);margin-bottom:10px";
+    p.textContent = "אין שורות שבוטלו";
+    allSec.appendChild(p);
+  }
   const allWrap = document.createElement("div"); allWrap.className="tblwrap";
   const at = document.createElement("table");
-  at.innerHTML = `<thead><tr><th>תחום</th><th>המשימה</th><th>אחראי</th><th>יעד</th><th>סטטוס</th></tr></thead>`;
+  at.innerHTML = `<thead><tr><th>תחום</th><th>המשימה</th><th>אחראי</th><th>יעד</th><th>סטטוס</th><th></th></tr></thead>`;
   const atb = document.createElement("tbody");
   rows.forEach(({domain,anchor,it})=>{
     const tr = document.createElement("tr");
@@ -686,17 +725,20 @@ function renderDash(main){
     const a=document.createElement("a"); a.href=anchor; a.textContent=domain; a.style.cssText="font-weight:600;text-decoration:none";
     t1.appendChild(a);
     const t2=document.createElement("td"); t2.textContent = it.t || it.n || "";
-    const t3=document.createElement("td"); t3.appendChild(ownerBtn(it,"o",lbl));
+    const t3=document.createElement("td");
+    if("o" in it) t3.appendChild(ownerBtn(it,"o",lbl)); else t3.textContent = "—";
     const t4=document.createElement("td");
     const ds=document.createElement("span"); ds.className="due num "+dueClass(it.d); ds.textContent = it.d||"—"; t4.appendChild(ds);
     const t5=document.createElement("td"); t5.appendChild(statusPill(it,lbl));
-    tr.append(t1,t2,t3,t4,t5); atb.appendChild(tr);
+    const t6=document.createElement("td"); t6.className="actions";
+    if(it.x) t6.appendChild(deleteBtn(it,lbl));
+    tr.append(t1,t2,t3,t4,t5,t6); atb.appendChild(tr);
   });
   at.appendChild(atb); allWrap.appendChild(at); allSec.appendChild(allWrap);
 
   const foot = document.createElement("footer");
   foot.style.cssText = "margin-top:50px;font-size:12px;color:var(--dim);border-top:1px solid var(--line);padding-top:14px;line-height:1.6";
-  foot.textContent = 'נבנה עבור סיוון · אחראית תפעול · משרת את אורלי בתהליך בקרה, מעקב ושחרור חסמים · מקור נתונים: אקסל "סיטונאות מוצר" של נלי (יולי 2026).';
+  foot.textContent = 'נבנה עבור סיוון · אחראית תפעול · משרת את אורלי בתהליך בקרה, מעקב ושחרור חסמים · מקור נתונים: אקסל סיטונאות מוצר של נלי (יולי 2026).';
   main.appendChild(foot);
 }
 
@@ -710,7 +752,41 @@ function normalize(D){
     {t:"דפי העזר של דניס זמינים לכל משתמש אצל הלקוח"}
   ];
   D.hypercare = D.hypercare.map(h=> typeof h==="string" ? {t:h} : h);
+  // התחלת מדידת 48 שעות לפריטים חסומים שאין להם עדיין חותמת זמן
+  ["blockers","changes","gaps","qa","interfaces","training","governance","risks"].forEach(k=>{
+    D[k].forEach(it=>{ if(it.s===2 && !it.bt) it.bt = Date.now(); });
+  });
   return D;
+}
+// שעות עבודה שחלפו מאז חותמת זמן — לא סופר שישי ושבת
+function workHoursSince(t){
+  let ms = 0, cur = new Date(t);
+  const now = new Date();
+  while(cur < now){
+    const dayEnd = new Date(cur.getFullYear(), cur.getMonth(), cur.getDate()+1);
+    const next = dayEnd < now ? dayEnd : now;
+    const wd = cur.getDay();
+    if(wd !== 5 && wd !== 6) ms += next - cur;
+    cur = next;
+  }
+  return ms/3600000;
+}
+// חסם שלא נגעו בו 48 שעות עבודה — עולה אוטומטית לשולחן אורלי
+function checkEscalations(){
+  if(!DATA) return;
+  let changed = false;
+  const POOLS = [["חסמים","blockers"],["שינויים","changes"],["פערים","gaps"],["בדיקות","qa"],["ממשקים","interfaces"],["הדרכות","training"],["בקרה","governance"],["סיכונים","risks"]];
+  POOLS.forEach(([name,key])=>{
+    DATA[key].forEach(it=>{
+      if(it.x || it.s !== 2 || it.esc || !it.bt) return;
+      if(workHoursSince(it.bt) < 48) return;
+      it.esc = true;
+      DATA.decisions.push({t:`חסם שלא שוחרר תוך 48 שעות (${name}): ${it.t || it.n || ""}`, w:"עלה אוטומטית — חסום יותר מ-48 שעות עבודה ללא טיפול", d:"", dec:"", s:0});
+      DATA.history.unshift({ts: nowStamp(), u:"אוטומטי", a:`חסם הוסלם אוטומטית לשולחן אורלי — ${(it.t || it.n || "").slice(0,70)}`});
+      changed = true;
+    });
+  });
+  if(changed){ renderAll(); queueSave(); }
 }
 async function load(showErrors){
   try{
@@ -718,6 +794,7 @@ async function load(showErrors){
     if(!r.ok) throw new Error(r.status);
     DATA = normalize(await r.json());
     renderAll();
+    checkEscalations();
     setSaveState("saved","✓ נשמר ומשותף");
     const lu = document.getElementById("lastUpd");
     if(lu) lu.textContent = (DATA.history && DATA.history[0] && DATA.history[0].ts) || nowStamp();
@@ -734,11 +811,10 @@ async function poll(){
     if(!r.ok) return;
     const fresh = normalize(await r.json());
     if(DATA && JSON.stringify(fresh) !== JSON.stringify(DATA)){ DATA = fresh; renderAll(); }
+    checkEscalations();
   }catch(e){}
 }
 
-document.getElementById("undoBtn").onclick = undo;
-document.getElementById("refreshBtn").onclick = ()=> load(true);
 document.getElementById("tabDash").onclick = ()=> setView("dash");
 document.getElementById("tabHist").onclick = ()=> setView("hist");
 addEventListener("keydown", e=>{
