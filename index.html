@@ -325,7 +325,7 @@ function dueCell(item, field){
   const td = document.createElement("td");
   const span = editableCell(item, field, "תאריך יעד");
   span.classList.add("due","num");
-  const c = dueClass(item[field]); if(c) span.classList.add(c);
+  const c = item.s === 3 ? "" : dueClass(item[field]); if(c) span.classList.add(c);
   td.appendChild(span);
   return td;
 }
@@ -740,7 +740,7 @@ function renderDash(main){
     const t3=document.createElement("td");
     if("o" in it) t3.appendChild(ownerBtn(it,"o",lbl)); else t3.textContent = "—";
     const t4=document.createElement("td");
-    const ds=document.createElement("span"); ds.className="due num "+dueClass(it.d); ds.textContent = it.d||"—"; t4.appendChild(ds);
+    const ds=document.createElement("span"); ds.className="due num "+(it.s===3 ? "" : dueClass(it.d)); ds.textContent = it.d||"—"; t4.appendChild(ds);
     const t5=document.createElement("td"); t5.appendChild(statusPill(it,lbl));
     const t6=document.createElement("td"); t6.className="actions";
     if(it.x) t6.appendChild(deleteBtn(it,lbl));
