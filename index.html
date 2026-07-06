@@ -700,19 +700,23 @@ function renderDash(main){
   main.appendChild(foot);
 }
 
+function normalize(D){
+  ["history","decisions","blockers","milestones","changes","gaps","qa","interfaces","training","governance","gonogo","risks","hypercare"].forEach(k=>{ if(!Array.isArray(D[k])) D[k]=[]; });
+  D.gonogo = D.gonogo.map(g=> typeof g==="string" ? {t:g,done:false} : g);
+  if(!D.hypercare.length) D.hypercare = [
+    {t:"שבועיים ראשונים: איש צוות זמין ללקוח בזמן אמת בכל שעות הפעילות"},
+    {t:"ערוץ תקלות ייעודי + זמן תגובה פנימי מוסכם לתקלה חוסמת: טיפול מיידי"},
+    {t:"שיחת סטטוס יומית עם הלקוח בשבוע הראשון"},
+    {t:"דפי העזר של דניס זמינים לכל משתמש אצל הלקוח"}
+  ];
+  D.hypercare = D.hypercare.map(h=> typeof h==="string" ? {t:h} : h);
+  return D;
+}
 async function load(showErrors){
   try{
     const r = await fetch(API + "?_=" + Date.now(), {cache:"no-store"});
     if(!r.ok) throw new Error(r.status);
-    DATA = await r.json();
-    DATA.gonogo = (DATA.gonogo||[]).map(g=> typeof g==="string" ? {t:g,done:false} : g);
-    if(!DATA.hypercare || !DATA.hypercare.length) DATA.hypercare = [
-      {t:"שבועיים ראשונים: איש צוות זמין ללקוח בזמן אמת בכל שעות הפעילות"},
-      {t:"ערוץ תקלות ייעודי + זמן תגובה פנימי מוסכם לתקלה חוסמת: טיפול מיידי"},
-      {t:"שיחת סטטוס יומית עם הלקוח בשבוע הראשון"},
-      {t:"דפי העזר של דניס זמינים לכל משתמש אצל הלקוח"}
-    ];
-    DATA.hypercare = DATA.hypercare.map(h=> typeof h==="string" ? {t:h} : h);
+    DATA = normalize(await r.json());
     renderAll();
     setSaveState("saved","✓ נשמר ומשותף");
     const lu = document.getElementById("lastUpd");
@@ -728,7 +732,7 @@ async function poll(){
   try{
     const r = await fetch(API + "?_=" + Date.now(), {cache:"no-store"});
     if(!r.ok) return;
-    const fresh = await r.json();
+    const fresh = normalize(await r.json());
     if(DATA && JSON.stringify(fresh) !== JSON.stringify(DATA)){ DATA = fresh; renderAll(); }
   }catch(e){}
 }
