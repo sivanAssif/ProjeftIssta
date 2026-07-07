@@ -163,7 +163,7 @@ td.actions{width:34px;white-space:nowrap}
 
 <nav><div class="wrap">
   <span id="anchors">
-    <a href="#sec-decisions">שולחן אורלי</a><a href="#sec-blockers">חסמים</a><a href="#sec-milestones">אבני דרך</a><a href="#sec-changes">שינויים</a><a href="#sec-qa">בדיקות</a><a href="#sec-interfaces">ממשקים</a><a href="#sec-training">הדרכות</a><a href="#sec-gov">בקרה</a><a href="#sec-risks">סיכונים</a><a href="#sec-all">כל המשימות</a>
+    <a href="#sec-decisions">שולחן אורלי</a><a href="#sec-blockers">חסמים</a><a href="#sec-milestones">אבני דרך</a><a href="#sec-changes">שינויים</a><a href="#sec-qa">בדיקות</a><a href="#sec-interfaces">ממשקים</a><a href="#sec-training">הדרכות</a><a href="#sec-gov">בקרה</a><a href="#sec-risks">סיכונים</a><a href="#sec-env">הגדרות סביבה</a><a href="#sec-all">כל המשימות</a>
   </span>
   <span id="saveState">✓ נשמר ומשותף</span>
   <span class="tabsep"></span>
@@ -379,6 +379,19 @@ function docLinkCell(item){
   const td = document.createElement("td");
   if((item.doc || "לא") === "כן") td.appendChild(linkEl(item, "docl", "לינק למסמך"));
   else{ const s = document.createElement("span"); s.style.color = "var(--dim)"; s.textContent = "—"; td.appendChild(s); }
+  return td;
+}
+function yesNoCell(item){
+  const td = document.createElement("td");
+  const yes = !!item.done;
+  const b = document.createElement("button");
+  b.className = "ownerbtn" + (yes ? " doc-yes" : " doc-no");
+  b.innerHTML = (yes ? "כן" : "לא") + '<span class="arr">▾</span>';
+  b.onclick = ()=> openMenu(b, ["כן","לא"], yes ? "כן" : "לא", pick=>{
+    const nv = pick === "כן";
+    if(nv !== !!item.done) change(`בוצע ${nv?"כן":"לא"} — ${(item.t||"").slice(0,60)}`, ()=>{ item.done = nv; });
+  });
+  td.appendChild(b);
   return td;
 }
 function isPristine(it){
@@ -828,6 +841,18 @@ function renderDash(main){
   });
   at.appendChild(atb); allWrap.appendChild(at); allSec.appendChild(allWrap);
 
+  /* --- הגדרות סביבה --- */
+  const envSec = addSec(secHead("sec-env","grid","","הגדרות סביבה",null,false,"הגדרות סביבת העבודה — נושא, אחראי, תאריך יעד, ביצוע ומסמך מצורף."));
+  envSec.appendChild(buildTable(D.env,[
+      {h:"נושא", render:it=>editableCell(it,"t","נושא")},
+      {h:"אחראי", render:it=>ownerBtn(it,"o",lbl)},
+      {h:"תאריך יעד", render:it=>dueCell(it,"d")},
+      {h:"בוצע", render:it=>yesNoCell(it)},
+      {h:"מסמך", render:it=>{ const td=document.createElement("td"); td.appendChild(linkEl(it,"docl","העלאת מסמך")); return td; }}
+    ],lbl,D.env));
+  envSec.appendChild(addRowBtn("הוספת שורה", D.env,
+    ()=>({t:"נושא חדש — לחצו לעריכה", o:UNASSIGNED, d:"", done:false}), "נוספה שורת הגדרות סביבה"));
+
   const foot = document.createElement("footer");
   foot.style.cssText = "margin-top:50px;font-size:12px;color:var(--dim);border-top:1px solid var(--line);padding-top:14px;line-height:1.6";
   foot.textContent = 'נבנה עבור סיוון · אחראית תפעול · משרת את אורלי בתהליך בקרה, מעקב ושחרור חסמים · מקור נתונים: אקסל סיטונאות מוצר של נלי (יולי 2026).';
@@ -835,7 +860,7 @@ function renderDash(main){
 }
 
 function normalize(D){
-  ["history","decisions","blockers","milestones","changes","gaps","qa","interfaces","training","governance","gonogo","risks","hypercare"].forEach(k=>{ if(!Array.isArray(D[k])) D[k]=[]; });
+  ["history","decisions","blockers","milestones","changes","gaps","qa","interfaces","training","governance","gonogo","risks","hypercare","env"].forEach(k=>{ if(!Array.isArray(D[k])) D[k]=[]; });
   D.gonogo = D.gonogo.map(g=> typeof g==="string" ? {t:g,done:false} : g);
   if(!D.hypercare.length) D.hypercare = [
     {t:"שבועיים ראשונים: איש צוות זמין ללקוח בזמן אמת בכל שעות הפעילות"},
