@@ -111,9 +111,7 @@ td.actions{width:34px;white-space:nowrap}
 .card.done{background:linear-gradient(160deg,#F4FCF6,#E4F7EA);border-color:#B9E7C6}
 .card.done .d{color:var(--green)}
 .donebadge{display:inline-flex;align-items:center;gap:5px;background:var(--green);color:#fff;font-size:11px;font-weight:700;border-radius:999px;padding:2px 10px;margin-bottom:7px}
-.mech{list-style:none;margin:6px 0 0;padding:0}
-.mech li{display:flex;gap:9px;margin-bottom:7px}
-.mech .n{flex:none;width:20px;height:20px;border-radius:50%;background:var(--brand-bg2);color:var(--brand-dark);font-weight:700;font-size:12px;display:inline-flex;align-items:center;justify-content:center;margin-top:2px}
+.mnum{display:inline-flex;width:18px;height:18px;border-radius:50%;background:var(--brand-bg2);color:var(--brand-dark);font-weight:700;font-size:11.5px;align-items:center;justify-content:center;vertical-align:1px;margin:0 1px}
 
 .goal{background:#fff;border:1px solid var(--line);border-inline-start:4px solid var(--brand);border-radius:8px;padding:11px 15px;margin-top:14px;font-size:13.5px;color:var(--muted);line-height:1.65}
 .goal h3{font-size:14px;color:var(--brand);margin-bottom:8px}
@@ -636,12 +634,7 @@ function renderDash(main){
   /* --- בקרה --- */
   const govSec = addSec(secHead("sec-gov","activity","","תחום 5 · בקרה וקצב","אחראית: נלי (PM)",false,"הקצב הוא המנגנון שמונע בלאגן: כל אחד יודע מתי הוא מדווח ועל מה."));
   const govGoal = document.createElement("div"); govGoal.className="goal"; govGoal.style.margin="0 0 14px";
-  govGoal.innerHTML = `<h3>המנגנון</h3><ul class="mech">
-    <li><span class="n">1</span><span>דיילי 15 דק' — כל בעל תחום: מה זז, מה תקוע.</span></li>
-    <li><span class="n">2</span><span>ישיבת בקרה שבועית — מעבר על הדשבורד הזה.</span></li>
-    <li><span class="n">3</span><span>דיווח שבועי לאורלי — רמזור + חסמים להחלטתה בלבד.</span></li>
-    <li><span class="n">4</span><span>Go/No-Go ב-15.9 עם קריטריונים מראש (למטה).</span></li>
-  </ul><div style="margin-top:8px"><b>עיקרון:</b> חסם שלא שוחרר תוך 48 שעות — עולה לאורלי אוטומטית.</div>`;
+  govGoal.innerHTML = `<b>המנגנון:</b> <span class="mnum">1</span> דיילי 15 דק' — כל בעל תחום: מה זז, מה תקוע. <span class="mnum">2</span> ישיבת בקרה שבועית — מעבר על הדשבורד הזה. <span class="mnum">3</span> דיווח שבועי לאורלי — רמזור + חסמים להחלטתה בלבד. <span class="mnum">4</span> Go/No-Go ב-15.9 עם קריטריונים מראש (למטה). <b>עיקרון:</b> חסם שלא שוחרר תוך 48 שעות — עולה לאורלי אוטומטית.`;
   govSec.appendChild(govGoal);
   govSec.appendChild(buildTable(D.governance,[
       {h:"משימת בקרה", render:it=>editableCell(it,"t","בקרה")},
