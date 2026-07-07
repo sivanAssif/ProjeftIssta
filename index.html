@@ -561,7 +561,7 @@ function renderDash(main){
   chGoal.innerHTML = `<b>התוצר:</b> טבלת שינויים חיה — לכל שינוי: חובה/לא לעלייה לאוויר, סיכון (מה יכול להישבר), השפעה על flow הבדיקות ואיך בודקים. <b>למה זה חשוב:</b> בלי זה אין הקפאת שינויים ואין דרך לדעת מה מסכן את העלייה לאוויר. <b>איך לגשת:</b> לעבור על גרסאות 138–145 באקסל של נלי, לסווג כל פריט פתוח, ולנהל בנוסף רשימה של פערים שעוד יכולים לצוץ — נושאים שטרם עלו אבל עלולים להתגלות בהמשך העבודה.`;
   chSec.appendChild(chGoal); chGoal.style.marginBottom="14px";
   chSec.appendChild(buildTable(D.changes,[
-      {h:"השינוי / הפריט", render:it=>editableCell(it,"t","שינוי")},
+      {h:"השינוי", render:it=>editableCell(it,"t","שינוי")},
       {h:"אחראי", render:it=>ownerBtn(it,"o",lbl)},
       {h:"יעד", render:it=>dueCell(it,"d")},
       {h:"חובה לעלייה לאוויר?", render:it=>editableCell(it,"m","סיווג")},
