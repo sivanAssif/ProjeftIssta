@@ -130,6 +130,14 @@ td.actions{width:34px;white-space:nowrap}
 .filters .flabel{font-size:12.5px;color:var(--dim);margin-inline-start:4px}
 .finput{font-family:inherit;font-size:13px;border:1px solid var(--line);background:#fff;color:var(--muted);border-radius:6px;padding:6px 11px;transition:all .15s}
 .finput:focus{outline:none;border-color:var(--brand);color:var(--ink)}
+.doclink{color:var(--brand);font-weight:600;font-size:12.5px;text-decoration:none;white-space:nowrap}
+.doclink:hover{text-decoration:underline}
+.linkedit{border:none;background:none;color:var(--dim);cursor:pointer;font-size:12px;padding:0 4px;margin-inline-start:2px}
+.linkedit:hover{color:var(--brand)}
+.addlink{font-family:inherit;font-size:12px;font-weight:500;border:1px dashed var(--line2);background:none;color:var(--dim);border-radius:6px;padding:3px 9px;cursor:pointer;transition:all .15s;white-space:nowrap}
+.addlink:hover{border-color:var(--brand);color:var(--brand)}
+.ownerbtn.doc-yes{color:#1a7a3c}
+.ownerbtn.doc-no{color:var(--dim)}
 
 .minifilt{display:flex;gap:6px;margin-bottom:10px}
 
@@ -328,6 +336,44 @@ function dueCell(item, field){
   span.classList.add("due","num");
   const c = item.s === 3 ? "" : dueClass(item[field]); if(c) span.classList.add(c);
   td.appendChild(span);
+  return td;
+}
+const DOC_OPTS = ["כן","לא","לא רלוונטי"];
+function linkEl(item, field, addLabel){
+  const span = document.createElement("span");
+  const url = item[field];
+  const editLink = ()=>{
+    const raw = prompt("הדביקו קישור:", item[field] || "");
+    if(raw === null) return;
+    const val = raw.trim();
+    if(val === (item[field] || "")) return;
+    change(val ? "עודכן לינק" : "הוסר לינק", ()=>{ if(val) item[field] = val; else delete item[field]; });
+  };
+  if(url){
+    const a = document.createElement("a"); a.href = url; a.target = "_blank"; a.rel = "noopener";
+    a.className = "doclink"; a.textContent = "מסמך ↗";
+    const ed = document.createElement("button"); ed.className = "linkedit"; ed.textContent = "✎"; ed.title = "עריכת לינק"; ed.onclick = editLink;
+    span.appendChild(a); span.appendChild(ed);
+  }else{
+    const b = document.createElement("button"); b.className = "addlink"; b.textContent = "+ " + addLabel; b.onclick = editLink;
+    span.appendChild(b);
+  }
+  return span;
+}
+function docCell(item){
+  const td = document.createElement("td");
+  const wrap = document.createElement("div");
+  wrap.style.cssText = "display:flex;flex-direction:column;gap:5px;align-items:flex-start";
+  const cur = item.doc || "לא";
+  const b = document.createElement("button");
+  b.className = "ownerbtn" + (cur === "כן" ? " doc-yes" : cur === "לא" ? " doc-no" : "");
+  b.innerHTML = esc(cur) + '<span class="arr">▾</span>';
+  b.onclick = ()=> openMenu(b, DOC_OPTS, cur, pick=>{
+    if(pick !== (item.doc || "לא")) change(`תיעוד עודכן ל-${pick} — ${(item.n||"").slice(0,60)}`, ()=>{ item.doc = pick; if(pick !== "כן") delete item.docl; });
+  });
+  wrap.appendChild(b);
+  if(cur === "כן") wrap.appendChild(linkEl(item, "docl", "לינק למסמך"));
+  td.appendChild(wrap);
   return td;
 }
 function isPristine(it){
@@ -645,10 +691,11 @@ function renderDash(main){
       {h:"אחראי", render:it=>ownerBtn(it,"o",ilbl)},
       {h:"יעד בדיקה מקצה לקצה", render:it=>dueCell(it,"d")},
       {h:"הפעולה הבאה", render:it=>editableCell(it,"nx","פעולה הבאה")},
+      {h:"תועד?", render:it=>docCell(it)},
       {h:"סטטוס", render:it=>statusPill(it,ilbl)}
     ],ilbl,D.interfaces));
   ifSec.appendChild(addRowBtn("הוספת ממשק", D.interfaces,
-    ()=>({n:"ממשק חדש", st:"", o:UNASSIGNED, d:"", nx:"", s:0}), "נוסף ממשק חדש"));
+    ()=>({n:"ממשק חדש", st:"", o:UNASSIGNED, d:"", nx:"", doc:"לא", s:0}), "נוסף ממשק חדש"));
 
   /* --- הדרכות --- */
   const trSec = addSec(secHead("sec-training","grad","","תחום 4 · הדרכות","אחראית: דניס",false,"הדרכה בלי דף מסכם לפי תהליך העבודה של הלקוח — לא נספרת כהושלמה."));
@@ -659,6 +706,7 @@ function renderDash(main){
       {h:"משימה", render:it=>editableCell(it,"t","הדרכה")},
       {h:"אחראי", render:it=>ownerBtn(it,"o",lbl)},
       {h:"יעד", render:it=>dueCell(it,"d")},
+      {h:"דף עזר ללקוח", render:it=>{ const td=document.createElement("td"); td.appendChild(linkEl(it,"help","לינק לדף עזר")); return td; }},
       {h:"סטטוס", render:it=>statusPill(it,lbl)}
     ],lbl,D.training));
   trSec.appendChild(addRowBtn("הוספת הדרכה", D.training,
