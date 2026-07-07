@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>איסתא סיטונאות — חדר בקרה לעלייה לאוויר 30.9.2026</title>
+<title>איסתא סיטונאות — חדר בקרה לעלייה לאוויר 9.10.2026</title>
 <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
 :root{
@@ -143,7 +143,7 @@ td.actions{width:34px;white-space:nowrap}
     <h1>איסתא סיטונאות — חדר בקרה לעלייה לאוויר</h1>
     <div class="sub">בקרה, מעקב ושחרור חסמים · מוגש לאורלי · עדכון אחרון: <span id="lastUpd" class="num">—</span></div>
     <div class="kpis">
-      <div class="kpi"><div class="v num" id="kpiDays">—</div><div class="l">ימים ל-30.9</div></div>
+      <div class="kpi"><div class="v num" id="kpiDays">—</div><div class="l">ימים ל-9.10</div></div>
       <div class="kpi"><div class="v" id="kpiRag">—</div><div class="l">סטטוס כולל (רמזור)</div></div>
       <div class="kpi"><div class="v num" id="kpiBlockers">—</div><div class="l">חסמים פתוחים</div></div>
       <div class="kpi"><div class="v num" id="kpiDone">—</div><div class="l">מהמשימות הושלמו</div></div>
@@ -168,7 +168,7 @@ td.actions{width:34px;white-space:nowrap}
 <script>
 "use strict";
 const API = "/api/data";
-const GO_LIVE = new Date(2026, 8, 30);
+const GO_LIVE = new Date(2026, 9, 9);
 const STATUSES = ["טרם התחיל","בתהליך","חסום","הושלם","בסיכון"];
 const PEOPLE = ["נלי","עדי","תומר","ניתי","דניס","יונתן","סיוון","נחמה","אורלי","יש למנות אחראי"];
 const UNASSIGNED = "יש למנות אחראי";
@@ -533,7 +533,7 @@ function renderDash(main){
     ()=>({t:"חסם חדש — לחצו לעריכה", o:UNASSIGNED, d:"", a:"", s:0}), "נוסף חסם חדש"));
 
   /* --- אבני דרך --- */
-  const msSec = addSec(secHead("sec-milestones","flag","","אבני דרך — תכנון לאחור מ-30.9",null,false,"כל אבן דרך היא שער: לא עוברים הלאה בלי לסגור אותה או להחליט במודע לדחות."));
+  const msSec = addSec(secHead("sec-milestones","flag","","אבני דרך — תכנון לאחור מ-9.10",null,false,"כל אבן דרך היא שער: לא עוברים הלאה בלי לסגור אותה או להחליט במודע לדחות."));
   const cards = document.createElement("div"); cards.className="cards";
   D.milestones.filter(m=>!m.x).forEach(m=>{
     const c = document.createElement("div");
@@ -660,7 +660,7 @@ function renderDash(main){
   gng.appendChild(addRowBtn("הוספת קריטריון", D.gonogo,
     ()=>({t:"קריטריון חדש — לחצו לעריכה", done:false}), "נוסף קריטריון Go/No-Go"));
   const hyper = document.createElement("div"); hyper.className="goal"; hyper.style.margin="0";
-  hyper.innerHTML = `<h3>תוכנית ליווי מוגבר אחרי העלייה לאוויר — 30.9 ואילך</h3>`;
+  hyper.innerHTML = `<h3>תוכנית ליווי מוגבר אחרי העלייה לאוויר — 9.10 ואילך</h3>`;
   const hwrap = document.createElement("ul");
   hwrap.style.cssText = "margin:0;padding-inline-start:18px;line-height:1.6";
   D.hypercare.forEach(hc=>{
