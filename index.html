@@ -372,8 +372,13 @@ function docCell(item){
     if(pick !== (item.doc || "לא")) change(`תיעוד עודכן ל-${pick} — ${(item.n||"").slice(0,60)}`, ()=>{ item.doc = pick; if(pick !== "כן") delete item.docl; });
   });
   wrap.appendChild(b);
-  if(cur === "כן") wrap.appendChild(linkEl(item, "docl", "לינק למסמך"));
   td.appendChild(wrap);
+  return td;
+}
+function docLinkCell(item){
+  const td = document.createElement("td");
+  if((item.doc || "לא") === "כן") td.appendChild(linkEl(item, "docl", "לינק למסמך"));
+  else{ const s = document.createElement("span"); s.style.color = "var(--dim)"; s.textContent = "—"; td.appendChild(s); }
   return td;
 }
 function isPristine(it){
@@ -692,6 +697,7 @@ function renderDash(main){
       {h:"יעד בדיקה מקצה לקצה", render:it=>dueCell(it,"d")},
       {h:"הפעולה הבאה", render:it=>editableCell(it,"nx","פעולה הבאה")},
       {h:"תועד?", render:it=>docCell(it)},
+      {h:"לינק למסמך", render:it=>docLinkCell(it)},
       {h:"סטטוס", render:it=>statusPill(it,ilbl)}
     ],ilbl,D.interfaces));
   ifSec.appendChild(addRowBtn("הוספת ממשק", D.interfaces,
