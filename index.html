@@ -580,10 +580,11 @@ function renderDash(main){
   chSec.appendChild(buildTable(D.gaps,[
     {h:"פער פוטנציאלי", render:it=>editableCell(it,"t","פער")},
     {h:"אחראי לבירור", render:it=>ownerBtn(it,"o",lbl)},
+    {h:"יעד לבירור", render:it=>dueCell(it,"d")},
     {h:"סטטוס", render:it=>statusPill(it,lbl)}
   ],lbl,D.gaps));
   chSec.appendChild(addRowBtn("הוספת פער", D.gaps,
-    ()=>({t:"פער חדש — לחצו לעריכה", o:"עדי", s:0}), "נוסף פער חדש"));
+    ()=>({t:"פער חדש — לחצו לעריכה", o:"עדי", d:"", s:0}), "נוסף פער חדש"));
 
   /* --- בדיקות --- */
   const qaSec = addSec(secHead("sec-qa","test","","תחום 2 · בדיקות — מטריצת סנריו","אחראית: ניתי (QA) · מלווה: תומר",false,"לכל סנריו אחראי אחד מהגילוי ועד תיקון, אימות ושיקוף — לא נופל בין הכיסאות."));
