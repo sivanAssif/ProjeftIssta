@@ -853,10 +853,6 @@ function renderDash(main){
   envSec.appendChild(addRowBtn("הוספת שורה", D.env,
     ()=>({t:"נושא חדש — לחצו לעריכה", o:UNASSIGNED, d:"", done:false}), "נוספה שורת הגדרות סביבה"));
 
-  const foot = document.createElement("footer");
-  foot.style.cssText = "margin-top:50px;font-size:12px;color:var(--dim);border-top:1px solid var(--line);padding-top:14px;line-height:1.6";
-  foot.textContent = 'נבנה עבור סיוון · אחראית תפעול · משרת את אורלי בתהליך בקרה, מעקב ושחרור חסמים · מקור נתונים: אקסל סיטונאות מוצר של נלי (יולי 2026).';
-  main.appendChild(foot);
 }
 
 function normalize(D){
