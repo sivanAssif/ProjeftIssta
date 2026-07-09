@@ -132,7 +132,7 @@ td.actions{width:34px;white-space:nowrap}
 .finput:focus{outline:none;border-color:var(--brand);color:var(--ink)}
 .doclink{display:inline-flex;align-items:center;color:var(--brand);text-decoration:none;vertical-align:middle}
 .doclink:hover{text-decoration:underline}
-.linkedit{border:none;background:none;color:var(--dim);cursor:pointer;font-size:12px;padding:0 4px;margin-inline-start:2px}
+.linkedit{display:inline-flex;align-items:center;border:none;background:none;color:var(--dim);cursor:pointer;font-size:10px;line-height:1;padding:0}
 .linkedit:hover{color:var(--brand)}
 .addlink{font-family:inherit;font-size:12px;font-weight:500;border:1px dashed var(--line2);background:none;color:var(--dim);border-radius:6px;padding:3px 9px;cursor:pointer;transition:all .15s;white-space:nowrap}
 .addlink:hover{border-color:var(--brand);color:var(--brand)}
@@ -341,6 +341,7 @@ function dueCell(item, field){
 const DOC_OPTS = ["כן","לא","לא רלוונטי"];
 function linkEl(item, field, addLabel){
   const span = document.createElement("span");
+  span.style.cssText = "display:inline-flex;align-items:center;gap:5px";
   const url = item[field];
   const editLink = ()=>{
     const raw = prompt("הדביקו קישור:", item[field] || "");
