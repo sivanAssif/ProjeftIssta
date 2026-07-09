@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>איסתא סיטונאות — חדר בקרה לעלייה לאוויר 9.10.2026</title>
+<title>איסתא סיטונאות — דף בקרה לעלייה לאוויר 9.10.2026</title>
 <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
 :root{
@@ -155,7 +155,7 @@ td.actions{width:34px;white-space:nowrap}
 <header>
   <div class="wrap">
     <div class="eyebrow">Travel Booster · פרויקט אסטרטגי</div>
-    <h1>איסתא סיטונאות — חדר בקרה לעלייה לאוויר</h1>
+    <h1>איסתא סיטונאות — דף בקרה לעלייה לאוויר</h1>
     <div class="sub">בקרה, מעקב ושחרור חסמים · מוגש לאורלי · עדכון אחרון: <span id="lastUpd" class="num">—</span></div>
     <div class="kpis">
       <div class="kpi"><div class="v num" id="kpiDays">—</div><div class="l">ימים ל-9.10</div></div>
@@ -878,7 +878,7 @@ function renderDash(main){
       {h:"תאריך יעד", render:it=>dueCell(it,"d")},
       {h:"בוצע", render:it=>yesNoCell(it)},
       {h:"הערות", render:it=>editableCell(it,"note","הערות")},
-      {h:"מסמך", render:it=>{ const td=document.createElement("td"); td.appendChild(linkEl(it,"docl","הוספת לינק")); return td; }}
+      {h:"לינק", render:it=>{ const td=document.createElement("td"); td.appendChild(linkEl(it,"docl","הוספת לינק")); return td; }}
     ],lbl,D.env));
   envSec.appendChild(addRowBtn("הוספת שורה", D.env,
     ()=>({t:"נושא חדש — לחצו לעריכה", o:UNASSIGNED, d:"", done:false, note:""}), "נוספה שורת הגדרות סביבה"));
