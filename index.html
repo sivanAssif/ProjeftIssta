@@ -128,6 +128,8 @@ td.actions{width:34px;white-space:nowrap}
 .fbtn:hover{border-color:var(--brand);color:var(--brand)}
 .fbtn.active{background:var(--brand);border-color:var(--brand);color:#fff}
 .filters .flabel{font-size:12.5px;color:var(--dim);margin-inline-start:4px}
+.fsel{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;color:var(--dim)}
+.fsel select{font-size:13px;padding:6px 10px;cursor:pointer}
 .finput{font-family:inherit;font-size:13px;border:1px solid var(--line);background:#fff;color:var(--muted);border-radius:6px;padding:6px 11px;transition:all .15s}
 .finput:focus{outline:none;border-color:var(--brand);color:var(--ink)}
 .doclink{display:inline-flex;align-items:center;color:var(--brand);text-decoration:none;vertical-align:middle}
@@ -188,7 +190,7 @@ let undoStack = [];
 let saveTimer = null, pendingSave = false;
 let view = "dash"; // dash | hist
 let decFilter = "open"; // open | done | all
-let allTasksFilter = {domain:"הכל", openOnly:false, deleted:false};
+let allTasksFilter = {domain:"הכל", owner:"הכל", view:"active"};
 let histFilter = {name:"", date:""};
 
 function userName(){
@@ -619,7 +621,7 @@ function renderDash(main){
   /* --- חסמים --- */
   const blkSec = addSec(secHead("sec-blockers","alert","red","חסמים פתוחים — דורשים החלטה / הסלמה",null,false,"מה שתקוע עכשיו ועוצר עבודה. חסם שנפתר — לסמן הושלם."));
   const blkGoal = document.createElement("div"); blkGoal.className="goal"; blkGoal.style.margin="0 0 12px";
-  blkGoal.innerHTML = `<b>מהו חסם פתוח:</b> משימה שלא יכולה להתקדם כי משהו עוצר אותה — החלטה חסרה, גורם חיצוני או תלות בצוות אחר. <b>מתי מוסיפים חסם:</b> ברגע שמזהים שעבודה נעצרה ואי אפשר לשחרר אותה לבד — לא מחכים לישיבה. <b>ההבדל משולחן אורלי:</b> חסם הוא בעיה תפעולית שאחראי מסוים צריך לשחרר; לשולחן אורלי עולים רק נושאים שדורשים הכרעה של אורלי עצמה. חסם שנשאר בסטטוס חסום 48 שעות עבודה (לא כולל סוף שבוע) בלי טיפול — עולה לשולחן אורלי אוטומטית.`;
+  blkGoal.innerHTML = `<b>מהו חסם פתוח:</b> משימה שלא יכולה להתקדם כי משהו עוצר אותה — החלטה חסרה, גורם חיצוני או תלות בצוות אחר. <b>מתי מוסיפים חסם:</b> ברגע שמזהים שעבודה נעצרה ואי אפשר לשחרר אותה לבד — לא מחכים לישיבה. <b>ההבדל משולחן אורלי:</b> חסם הוא בעיה תפעולית שאחראי מסוים צריך לשחרר; לשולחן אורלי עולים רק נושאים שדורשים הכרעה של אורלי עצמה.`;
   blkSec.appendChild(blkGoal);
   blkSec.appendChild(buildTable(D.blockers,[
       {h:"החסם", render:it=>editableCell(it,"t","חסם")},
@@ -647,12 +649,13 @@ function renderDash(main){
     t.appendChild(editableCell(m,"t","אבן דרך"));
     const row = document.createElement("div"); row.className="row2";
     row.appendChild(statusPill(m,lbl));
+    row.appendChild(ownerBtn(m,"o",lbl));
     const dx = deleteBtn(m,lbl,D.milestones); dx.classList.add("delx");
     c.append(d,t,row,dx); cards.appendChild(c);
   });
   msSec.appendChild(cards);
   msSec.appendChild(addRowBtn("הוספת אבן דרך", D.milestones,
-    ()=>({d:"", t:"אבן דרך חדשה — לחצו לעריכה", s:0}), "נוספה אבן דרך חדשה"));
+    ()=>({d:"", t:"אבן דרך חדשה — לחצו לעריכה", o:UNASSIGNED, s:0}), "נוספה אבן דרך חדשה"));
 
   /* --- שינויים ופערים --- */
   const chSec = addSec(secHead("sec-changes","list","","תחום 1 · שינויים ופערים","אחראי: עדי",false,"המטרה: שרשימת השינויים תפסיק להיות זרם אינסופי ותהפוך לרשימה סגורה ומנוהלת."));
@@ -737,7 +740,7 @@ function renderDash(main){
   /* --- בקרה --- */
   const govSec = addSec(secHead("sec-gov","activity","","תחום 5 · בקרה וקצב","אחראית: נלי (PM)",false,"הקצב הוא המנגנון שמונע בלאגן: כל אחד יודע מתי הוא מדווח ועל מה."));
   const govGoal = document.createElement("div"); govGoal.className="goal"; govGoal.style.margin="0 0 14px";
-  govGoal.innerHTML = `<b>המנגנון:</b> <span class="mnum">1</span> דיילי 15 דק' — כל בעל תחום: מה זז, מה תקוע. <span class="mnum">2</span> ישיבת בקרה שבועית — מעבר על הדשבורד הזה. <span class="mnum">3</span> דיווח שבועי לאורלי — רמזור + חסמים להחלטתה בלבד. <span class="mnum">4</span> Go/No-Go ב-15.9 עם קריטריונים מראש (למטה). <b>עיקרון:</b> חסם שלא שוחרר תוך 48 שעות — עולה לאורלי אוטומטית.`;
+  govGoal.innerHTML = `<b>המנגנון:</b> <span class="mnum">1</span> דיילי 15 דק' — כל בעל תחום: מה זז, מה תקוע. <span class="mnum">2</span> ישיבת בקרה שבועית — מעבר על הדשבורד הזה. <span class="mnum">3</span> דיווח שבועי לאורלי — רמזור + חסמים להחלטתה בלבד. <span class="mnum">4</span> Go/No-Go ב-15.9 עם קריטריונים מראש (למטה).`;
   govSec.appendChild(govGoal);
   govSec.appendChild(buildTable(D.governance,[
       {h:"משימת בקרה", render:it=>editableCell(it,"t","בקרה")},
@@ -796,27 +799,37 @@ function renderDash(main){
   ];
   const allSec = addSec(secHead("sec-all","grid","","כל המשימות — תצוגה מרוכזת",null,false,"כל המשימות מכל התחומים בטבלה אחת, ממוינות לפי תאריך יעד. עריכה כאן מתעדכנת בתחום המקורי."));
   const filt = document.createElement("div"); filt.className="filters";
-  filt.appendChild(fbtn("הכל", allTasksFilter.domain==="הכל", ()=>{ allTasksFilter.domain="הכל"; renderAll(); }));
-  DOMAINS.forEach(([name])=> filt.appendChild(fbtn(name, allTasksFilter.domain===name, ()=>{ allTasksFilter.domain=name; renderAll(); })));
-  filt.appendChild(fbtn("רק פתוחות", allTasksFilter.openOnly, ()=>{ allTasksFilter.openOnly=!allTasksFilter.openOnly; renderAll(); }));
-  filt.appendChild(fbtn("שורות שבוטלו", allTasksFilter.deleted, ()=>{ allTasksFilter.deleted=!allTasksFilter.deleted; renderAll(); }));
+  const mkSelect = (label, value, options, onChange)=>{
+    const wrap = document.createElement("label"); wrap.className="fsel";
+    const sp = document.createElement("span"); sp.textContent = label; wrap.appendChild(sp);
+    const sel = document.createElement("select"); sel.className="finput";
+    options.forEach(([val,txt])=>{ const o=document.createElement("option"); o.value=val; o.textContent=txt; if(val===value) o.selected=true; sel.appendChild(o); });
+    sel.onchange = ()=>{ onChange(sel.value); renderAll(); };
+    wrap.appendChild(sel); return wrap;
+  };
+  filt.appendChild(mkSelect("תחום", allTasksFilter.domain, [["הכל","כל התחומים"], ...DOMAINS.map(([n])=>[n,n])], v=>allTasksFilter.domain=v));
+  filt.appendChild(mkSelect("אחראי", allTasksFilter.owner, [["הכל","כל האחראים"], ...PEOPLE.map(p=>[p,p])], v=>allTasksFilter.owner=v));
+  filt.appendChild(mkSelect("תצוגה", allTasksFilter.view, [["active","הכל הפעילות"],["open","רק פתוחות"],["done","הושלמו"],["deleted","שורות שבוטלו"]], v=>allTasksFilter.view=v));
   allSec.appendChild(filt);
+  const view = allTasksFilter.view;
   let rows = [];
   DOMAINS.forEach(([name,key,anchor])=>{
     if(allTasksFilter.domain !== "הכל" && allTasksFilter.domain !== name) return;
     D[key].forEach(it=> rows.push({domain:name, anchor, it}));
   });
-  rows = rows.filter(r=> allTasksFilter.deleted ? r.it.x : !r.it.x);
-  if(allTasksFilter.openOnly) rows = rows.filter(r=> r.it.s !== 3);
+  rows = rows.filter(r=> view === "deleted" ? r.it.x : !r.it.x);
+  if(view === "open") rows = rows.filter(r=> r.it.s !== 3);
+  if(view === "done") rows = rows.filter(r=> r.it.s === 3);
+  if(allTasksFilter.owner !== "הכל") rows = rows.filter(r=> (r.it.o || "") === allTasksFilter.owner);
   rows.sort((a,b)=>{
     const da = parseDue(a.it.d), db = parseDue(b.it.d);
     if(da && db) return da - db;
     return da ? -1 : db ? 1 : 0;
   });
-  if(allTasksFilter.deleted && !rows.length){
+  if(!rows.length){
     const p = document.createElement("div");
     p.style.cssText = "background:#fff;border:1px solid var(--line);border-radius:10px;padding:16px;color:var(--dim);margin-bottom:10px";
-    p.textContent = "אין שורות שבוטלו";
+    p.textContent = view === "deleted" ? "אין שורות שבוטלו" : "אין משימות התואמות לסינון";
     allSec.appendChild(p);
   }
   const allWrap = document.createElement("div"); allWrap.className="tblwrap";
@@ -882,41 +895,7 @@ function normalize(D){
     {t:"דפי העזר של דניס זמינים לכל משתמש אצל הלקוח"}
   ];
   D.hypercare = D.hypercare.map(h=> typeof h==="string" ? {t:h} : h);
-  // התחלת מדידת 48 שעות לפריטים חסומים שאין להם עדיין חותמת זמן
-  ["blockers","changes","gaps","qa","interfaces","training","governance","risks"].forEach(k=>{
-    D[k].forEach(it=>{ if(it.s===2 && !it.bt) it.bt = Date.now(); });
-  });
   return D;
-}
-// שעות עבודה שחלפו מאז חותמת זמן — לא סופר שישי ושבת
-function workHoursSince(t){
-  let ms = 0, cur = new Date(t);
-  const now = new Date();
-  while(cur < now){
-    const dayEnd = new Date(cur.getFullYear(), cur.getMonth(), cur.getDate()+1);
-    const next = dayEnd < now ? dayEnd : now;
-    const wd = cur.getDay();
-    if(wd !== 5 && wd !== 6) ms += next - cur;
-    cur = next;
-  }
-  return ms/3600000;
-}
-// חסם שלא נגעו בו 48 שעות עבודה — עולה אוטומטית לשולחן אורלי
-function checkEscalations(){
-  if(!DATA) return;
-  let changed = false;
-  const POOLS = [["חסמים","blockers"],["שינויים","changes"],["פערים","gaps"],["בדיקות","qa"],["ממשקים","interfaces"],["הדרכות","training"],["בקרה","governance"],["סיכונים","risks"]];
-  POOLS.forEach(([name,key])=>{
-    DATA[key].forEach(it=>{
-      if(it.x || it.s !== 2 || it.esc || !it.bt) return;
-      if(workHoursSince(it.bt) < 48) return;
-      it.esc = true;
-      DATA.decisions.push({t:`חסם שלא שוחרר תוך 48 שעות (${name}): ${it.t || it.n || ""}`, w:"עלה אוטומטית — חסום יותר מ-48 שעות עבודה ללא טיפול", d:"", dec:"", s:0});
-      DATA.history.unshift({ts: nowStamp(), u:"אוטומטי", a:`חסם הוסלם אוטומטית לשולחן אורלי — ${(it.t || it.n || "").slice(0,70)}`});
-      changed = true;
-    });
-  });
-  if(changed){ renderAll(); queueSave(); }
 }
 async function load(showErrors){
   try{
@@ -924,7 +903,6 @@ async function load(showErrors){
     if(!r.ok) throw new Error(r.status);
     DATA = normalize(await r.json());
     renderAll();
-    checkEscalations();
     setSaveState("saved","✓ נשמר ומשותף");
     const lu = document.getElementById("lastUpd");
     if(lu) lu.textContent = (DATA.history && DATA.history[0] && DATA.history[0].ts) || nowStamp();
@@ -941,7 +919,6 @@ async function poll(){
     if(!r.ok) return;
     const fresh = normalize(await r.json());
     if(DATA && JSON.stringify(fresh) !== JSON.stringify(DATA)){ DATA = fresh; renderAll(); }
-    checkEscalations();
   }catch(e){}
 }
 
