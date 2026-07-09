@@ -183,7 +183,7 @@ function tdWrap(node){ const td=document.createElement("td"); td.appendChild(nod
 function roCell(item,field){
   const td=document.createElement("td");
   const sp=document.createElement("span");
-  if(item[field]){ sp.textContent=item[field]; } else { sp.textContent="—"; sp.style.color="var(--dim)"; }
+  if(item[field]){ sp.textContent=item[field]; } else { sp.textContent="יוקצה על ידי הצוות"; sp.style.color="var(--dim)"; sp.style.fontSize="12.5px"; }
   td.appendChild(sp); return td;
 }
 
