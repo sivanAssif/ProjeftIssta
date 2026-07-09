@@ -130,6 +130,9 @@ td.actions{width:34px;white-space:nowrap}
 .filters .flabel{font-size:12.5px;color:var(--dim);margin-inline-start:4px}
 .fsel{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;color:var(--dim)}
 .fsel select{font-size:13px;padding:6px 10px;cursor:pointer}
+.srctag{font-size:11px;font-weight:700;padding:2px 9px;border-radius:6px}
+.srctag.internal{color:#534AB7;background:#EEEBFB}
+.srctag.client{color:#1F8A54;background:#E5F4EC}
 .finput{font-family:inherit;font-size:13px;border:1px solid var(--line);background:#fff;color:var(--muted);border-radius:6px;padding:6px 11px;transition:all .15s}
 .finput:focus{outline:none;border-color:var(--brand);color:var(--ink)}
 .doclink{display:inline-flex;align-items:center;color:var(--brand);text-decoration:none;vertical-align:middle}
@@ -191,7 +194,7 @@ let saveTimer = null, pendingSave = false;
 let view = "dash"; // dash | hist
 let decFilter = "open"; // open | done | all
 let allTasksFilter = {domain:"הכל", owner:"הכל", view:"active"};
-let histFilter = {name:"", date:""};
+let histFilter = {name:"", date:"", source:"all"};
 
 function userName(){
   let n = localStorage.getItem("issta-user");
@@ -223,7 +226,7 @@ function nowStamp(){
 }
 
 function logAction(text){
-  DATA.history.unshift({ts: nowStamp(), u: userName(), a: text});
+  DATA.history.unshift({ts: nowStamp(), u: userName(), a: text, src:"internal"});
   if(DATA.history.length > 500) DATA.history.length = 500;
 }
 function snapshot(){
@@ -533,13 +536,18 @@ function renderHistory(main){
   nameIn.type="text"; nameIn.className="finput"; nameIn.placeholder="חיפוש לפי שם / תוכן"; nameIn.value=histFilter.name;
   const dateIn = document.createElement("input");
   dateIn.type="date"; dateIn.className="finput"; dateIn.value=histFilter.date;
-  const clearBtn = fbtn("נקה", false, ()=>{ histFilter.name=""; histFilter.date=""; nameIn.value=""; dateIn.value=""; applyFilter(); });
-  filt.appendChild(nameIn); filt.appendChild(dateIn); filt.appendChild(clearBtn);
+  const srcWrap = document.createElement("label"); srcWrap.className="fsel";
+  const srcSp = document.createElement("span"); srcSp.textContent = "מקור"; srcWrap.appendChild(srcSp);
+  const srcSel = document.createElement("select"); srcSel.className="finput";
+  [["all","הכל"],["internal","פנימי"],["client","לקוח"]].forEach(([v,txt])=>{ const o=document.createElement("option"); o.value=v; o.textContent=txt; if(v===histFilter.source) o.selected=true; srcSel.appendChild(o); });
+  srcWrap.appendChild(srcSel);
+  const clearBtn = fbtn("נקה", false, ()=>{ histFilter.name=""; histFilter.date=""; histFilter.source="all"; nameIn.value=""; dateIn.value=""; srcSel.value="all"; applyFilter(); });
+  filt.appendChild(nameIn); filt.appendChild(dateIn); filt.appendChild(srcWrap); filt.appendChild(clearBtn);
   s.appendChild(filt);
 
   const wrap = document.createElement("div"); wrap.className="tblwrap";
   const t = document.createElement("table");
-  t.innerHTML = `<thead><tr><th style="width:150px">מתי</th><th style="width:140px">מי</th><th>מה</th></tr></thead>`;
+  t.innerHTML = `<thead><tr><th style="width:150px">מתי</th><th style="width:140px">מי</th><th>מה</th><th style="width:80px">מקור</th></tr></thead>`;
   const tb = document.createElement("tbody");
   t.appendChild(tb); wrap.appendChild(t); s.appendChild(wrap);
   main.appendChild(s);
@@ -554,24 +562,29 @@ function renderHistory(main){
     const q = histFilter.name.trim().toLowerCase();
     const rows = DATA.history.filter(hh=>{
       if(histFilter.date && tsToISO(hh.ts) !== histFilter.date) return false;
+      if(histFilter.source==="client" && hh.src!=="client") return false;
+      if(histFilter.source==="internal" && hh.src==="client") return false;
       if(q && !((hh.u||"").toLowerCase().includes(q) || (hh.a||"").toLowerCase().includes(q))) return false;
       return true;
     });
     tb.innerHTML = "";
     rows.forEach(hh=>{
       const tr = document.createElement("tr");
-      tr.innerHTML = `<td class="num">${esc(hh.ts)}</td><td>${esc(hh.u)}</td><td>${esc(hh.a)}</td>`;
+      const srcTxt = hh.src==="client" ? "לקוח" : "פנימי";
+      const srcCls = hh.src==="client" ? "srctag client" : "srctag internal";
+      tr.innerHTML = `<td class="num">${esc(hh.ts)}</td><td>${esc(hh.u)}</td><td>${esc(hh.a)}</td><td><span class="${srcCls}">${srcTxt}</span></td>`;
       tb.appendChild(tr);
     });
     if(!rows.length){
       const tr = document.createElement("tr");
       const msg = DATA.history.length ? "אין עדכונים התואמים לסינון" : "אין עדיין עדכונים";
-      tr.innerHTML = `<td colspan="3" style="color:var(--dim)">${msg}</td>`;
+      tr.innerHTML = `<td colspan="4" style="color:var(--dim)">${msg}</td>`;
       tb.appendChild(tr);
     }
   }
   nameIn.oninput = ()=>{ histFilter.name=nameIn.value; applyFilter(); };
   dateIn.oninput = ()=>{ histFilter.date=dateIn.value; applyFilter(); };
+  srcSel.onchange = ()=>{ histFilter.source=srcSel.value; applyFilter(); };
   applyFilter();
 }
 
