@@ -180,6 +180,12 @@ function delCell(arr,item,tableName){
   td.appendChild(b); return td;
 }
 function tdWrap(node){ const td=document.createElement("td"); td.appendChild(node); return td; }
+function roCell(item,field){
+  const td=document.createElement("td");
+  const sp=document.createElement("span");
+  if(item[field]){ sp.textContent=item[field]; } else { sp.textContent="—"; sp.style.color="var(--dim)"; }
+  td.appendChild(sp); return td;
+}
 
 function buildTable(arr,cols,tableName){
   const wrap=document.createElement("div"); wrap.className="tblwrap";
@@ -218,7 +224,7 @@ function render(){
   app.innerHTML="";
   const envTbl=buildTable(ST.env,[
     {h:"נושא", render:it=>editableCell(it,"t","נושא","הגדרות סביבה")},
-    {h:"אחראי", render:it=>editableCell(it,"o","אחראי","הגדרות סביבה")},
+    {h:"אחראי", render:it=>roCell(it,"o")},
     {h:"תאריך יעד", render:it=>dueCell(it,"d","הגדרות סביבה")},
     {h:"בוצע", render:it=>yesNoCell(it,"הגדרות סביבה")},
     {h:"הערות", render:it=>editableCell(it,"note","הערות","הגדרות סביבה")},
@@ -229,7 +235,7 @@ function render(){
 
   const fuTbl=buildTable(ST.follow,[
     {h:"נושא", render:it=>editableCell(it,"t","נושא","Follow up")},
-    {h:"אחראי", render:it=>editableCell(it,"o","אחראי","Follow up")},
+    {h:"אחראי", render:it=>roCell(it,"o")},
     {h:"סטטוס", render:it=>statusCell(it,"Follow up")},
     {h:"תאריך יעד", render:it=>dueCell(it,"d","Follow up")},
     {h:"הערות", render:it=>editableCell(it,"note","הערות","Follow up")},
