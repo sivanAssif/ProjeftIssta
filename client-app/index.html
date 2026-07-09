@@ -238,7 +238,7 @@ function render(){
     {h:"מסמך", render:it=>linkCell(it,"docl","הוספת לינק","הגדרות סביבה")},
   ],"הגדרות סביבה");
   const envAdd=addRowBtn("הוספת שורה",ST.env,()=>({t:"נושא חדש — לחצו לעריכה",o:"",d:"",done:false,note:""}),"נוספה שורת הגדרות סביבה");
-  app.appendChild(section("הגדרות סביבה","הגדרות סביבת העבודה — נושא, אחראי, יעד, ביצוע ומסמך.",envTbl,envAdd));
+  app.appendChild(section("הגדרות סביבה","",envTbl,envAdd));
 
   const fuTbl=buildTable(ST.follow,[
     {h:"נושא", render:it=>editableCell(it,"t","נושא","Follow up")},
@@ -249,7 +249,7 @@ function render(){
     {h:"לינק", render:it=>linkCell(it,"docl","הוספת לינק","Follow up")},
   ],"Follow up");
   const fuAdd=addRowBtn("הוספת שורה",ST.follow,()=>({t:"נושא חדש — לחצו לעריכה",o:"",d:"",note:"",s:0}),"נוספה שורת Follow up");
-  app.appendChild(section("Follow up","מעקב נושאים פתוחים — נושא, אחראי, סטטוס, יעד, הערות ולינק.",fuTbl,fuAdd));
+  app.appendChild(section("Follow up","",fuTbl,fuAdd));
 }
 
 function renderNameBar(){
