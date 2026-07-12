@@ -445,9 +445,9 @@ function docCell(item){
   return td;
 }
 function docLinkCell(item){
+  if((item.doc || "לא") === "כן") return namedLinkCell(item, "docl", "doclt", "ממשק");
   const td = document.createElement("td");
-  if((item.doc || "לא") === "כן") td.appendChild(linkEl(item, "docl", "לינק למסמך"));
-  else{ const s = document.createElement("span"); s.style.color = "var(--dim)"; s.textContent = "—"; td.appendChild(s); }
+  const s = document.createElement("span"); s.style.color = "var(--dim)"; s.textContent = "—"; td.appendChild(s);
   return td;
 }
 function yesNoCell(item){
@@ -804,7 +804,7 @@ function renderDash(main){
       {h:"משימה", render:it=>editableCell(it,"t","הדרכה")},
       {h:"אחראי", render:it=>ownerBtn(it,"o",lbl)},
       {h:"יעד", render:it=>dueCell(it,"d")},
-      {h:"דף עזר ללקוח", render:it=>{ const td=document.createElement("td"); td.appendChild(linkEl(it,"help","לינק לדף עזר")); return td; }},
+      {h:"דף עזר ללקוח", render:it=>namedLinkCell(it,"help","helpt","הדרכה")},
       {h:"סטטוס", render:it=>statusPill(it,lbl)}
     ],lbl,D.training));
   trSec.appendChild(addRowBtn("הוספת הדרכה", D.training,
@@ -937,7 +937,7 @@ function renderDash(main){
       {h:"תאריך יעד", render:it=>dueCell(it,"d")},
       {h:"בוצע", render:it=>yesNoCell(it)},
       {h:"הערות", render:it=>editableCell(it,"note","הערות")},
-      {h:"לינק", render:it=>{ const td=document.createElement("td"); td.appendChild(linkEl(it,"docl","הוספת לינק")); return td; }}
+      {h:"לינק", render:it=>namedLinkCell(it,"docl","doclt","הגדרות סביבה")}
     ],lbl,D.env));
   envSec.appendChild(addRowBtn("הוספת שורה", D.env,
     ()=>({t:"נושא חדש — לחצו לעריכה", o:UNASSIGNED, d:"", done:false, note:""}), "נוספה שורת הגדרות סביבה"));
@@ -950,7 +950,7 @@ function renderDash(main){
       {h:"סטטוס", render:it=>statusPill(it,lbl)},
       {h:"תאריך יעד", render:it=>dueCell(it,"d")},
       {h:"הערות", render:it=>editableCell(it,"note","הערות")},
-      {h:"לינק", render:it=>{ const td=document.createElement("td"); td.appendChild(linkEl(it,"docl","הוספת לינק")); return td; }}
+      {h:"לינק", render:it=>namedLinkCell(it,"docl","doclt","Follow up")}
     ],lbl,D.follow));
   fuSec.appendChild(addRowBtn("הוספת שורה", D.follow,
     ()=>({t:"נושא חדש — לחצו לעריכה", o:UNASSIGNED, d:"", note:"", s:0}), "נוספה שורת Follow up"));
