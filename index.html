@@ -476,10 +476,6 @@ function buildTable(items, cols, itemLabel, srcArr){
       let td;
       if(node.tagName === "TD"){ td = node; }
       else{ td = document.createElement("td"); td.appendChild(node); }
-      if(ci === 0 && item.s === 3){
-        const chk = document.createElement("span"); chk.className = "donechk"; chk.textContent = "✓";
-        td.insertBefore(chk, td.firstChild);
-      }
       tr.appendChild(td);
     });
     const tda = document.createElement("td"); tda.className="actions";
@@ -895,7 +891,6 @@ function renderDash(main){
     const a=document.createElement("a"); a.href=anchor; a.textContent=domain; a.style.cssText="font-weight:600;text-decoration:none";
     t1.appendChild(a);
     const t2=document.createElement("td");
-    if(!it.x && it.s === 3){ const chk=document.createElement("span"); chk.className="donechk"; chk.textContent="✓"; t2.appendChild(chk); }
     t2.appendChild(document.createTextNode(it.t || it.n || ""));
     const t3=document.createElement("td");
     if("o" in it) t3.appendChild(ownerBtn(it,"o",lbl)); else t3.textContent = "—";
