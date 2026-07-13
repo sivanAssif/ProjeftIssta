@@ -90,7 +90,7 @@ module.exports = async function handler(req, res) {
       }
 
       const commit = {
-        message: "עדכון מהלקוח — " + user,
+        message: "עדכון מהלקוח — " + user + " [skip ci]",
         content: Buffer.from(JSON.stringify(full), "utf8").toString("base64"),
         branch: "main",
         sha: meta.sha,

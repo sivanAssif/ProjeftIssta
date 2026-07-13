@@ -159,6 +159,14 @@ tr.needspec td{background:#FCEDED}
 .ownerbtn.doc-no{color:var(--dim)}
 
 .minifilt{display:flex;gap:6px;margin-bottom:10px}
+.usmenu{position:relative;display:inline-block}
+.usdrop{position:absolute;top:calc(100% + 6px);inset-inline-start:0;background:#fff;border:1px solid var(--line);border-radius:12px;box-shadow:0 10px 30px rgba(27,18,48,.14);min-width:210px;z-index:60;overflow:hidden;display:none}
+.usdrop.open{display:block}
+.usdrop .ushead{padding:9px 14px;font-size:11.5px;font-weight:700;color:var(--dim);background:var(--app-bg);border-bottom:1px solid var(--row)}
+.usdrop a{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 14px;font-size:13px;color:var(--ink);text-decoration:none;border-bottom:1px solid #F3F1F6}
+.usdrop a:last-child{border-bottom:none}
+.usdrop a:hover{background:var(--brand-bg)}
+.usdrop a svg{color:var(--dim);flex:none}
 
 .footgap{height:60px}
 @media (max-width:800px){.wrap{padding:0 16px}.kpis{grid-template-columns:repeat(2,1fr)}.sec-note{font-size:11.5px}}
@@ -188,6 +196,7 @@ tr.needspec td{background:#FCEDED}
   <span class="tabsep"></span>
   <button class="tab active" id="tabDash">דשבורד</button>
   <button class="tab" id="tabHist">היסטוריה</button>
+  <span class="usmenu"><button class="tab" id="usBtn">US</button><div class="usdrop" id="usDrop"></div></span>
 </div></nav>
 
 <div class="wrap" id="main"></div>
@@ -997,6 +1006,27 @@ async function poll(){
 
 document.getElementById("tabDash").onclick = ()=> setView("dash");
 document.getElementById("tabHist").onclick = ()=> setView("hist");
+
+// לינקים קבועים לפרויקט (US) — שמות קבועים, ללא עריכה
+const SPRINT_LINKS = [
+  ["ספרינט 140","https://galortfs.visualstudio.com/TravelBooster/_queries/query/88960842-1e06-4919-bc45-4635983e794b/"],
+  ["ספרינט 141","https://galortfs.visualstudio.com/TravelBooster/_queries/query/e73cc80b-9916-4286-ac99-069c5c0b569d/"],
+  ["ספרינט 142","https://galortfs.visualstudio.com/TravelBooster/_queries/query/11704694-63e1-4f3f-8599-fd3725fb0b11/"],
+  ["ספרינט 143","https://galortfs.visualstudio.com/TravelBooster/_queries/query/8183fa35-be13-4869-91eb-377b37efd4a5/"],
+  ["ספרינט 144","https://galortfs.visualstudio.com/TravelBooster/_queries/query/6ec93954-f9c5-44da-abe8-6cc76997ff41/"],
+  ["ספרינט 145","https://galortfs.visualstudio.com/TravelBooster/_queries/query/5e286930-3211-4d90-86a1-768f5a07b0d1/"],
+];
+(function(){
+  const btn = document.getElementById("usBtn"), drop = document.getElementById("usDrop");
+  const head = document.createElement("div"); head.className = "ushead"; head.textContent = "לינקים לפרויקט"; drop.appendChild(head);
+  SPRINT_LINKS.forEach(([name,url])=>{
+    const a = document.createElement("a"); a.href = url; a.target = "_blank"; a.rel = "noopener";
+    a.innerHTML = esc(name) + '<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7M8 7h9v9"/></svg>';
+    drop.appendChild(a);
+  });
+  btn.onclick = e=>{ e.stopPropagation(); drop.classList.toggle("open"); };
+  document.addEventListener("click", e=>{ if(!drop.contains(e.target) && e.target !== btn) drop.classList.remove("open"); });
+})();
 addEventListener("keydown", e=>{
   if((e.ctrlKey||e.metaKey) && e.key==="z" && !(document.activeElement && document.activeElement.isContentEditable)){ e.preventDefault(); undo(); }
 });

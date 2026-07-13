@@ -66,7 +66,7 @@ module.exports = async function handler(req, res) {
       const m = await gh("GET", API_PATH + "?ref=main", tok);
       if (m.status === 200) { try { sha = JSON.parse(m.body).sha; } catch {} }
       const user = req.headers["x-user"] ? decodeURIComponent(req.headers["x-user"]) : "לא ידוע";
-      const commit = { message: "עדכון דשבורד — " + user, content: Buffer.from(data, "utf8").toString("base64"), branch: "main" };
+      const commit = { message: "עדכון דשבורד — " + user + " [skip ci]", content: Buffer.from(data, "utf8").toString("base64"), branch: "main" };
       if (sha) commit.sha = sha;
       const r = await gh("PUT", API_PATH, tok, JSON.stringify(commit));
       if (r.status !== 200 && r.status !== 201) return res.status(502).json({ error: "save failed " + r.status });
