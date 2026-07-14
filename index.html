@@ -220,12 +220,13 @@ let allTasksFilter = {domain:"הכל", owner:"הכל", view:"active"};
 let histFilter = {name:"", date:"", source:"all"};
 
 function userName(){
-  let n = localStorage.getItem("issta-user");
-  if(!n){
+  let n = (localStorage.getItem("issta-user") || "").trim();
+  if(n === "אורח/ת") n = ""; // שם אורח ישן — נדרוש שם אמיתי
+  while(!n){
     n = (prompt("כדי שנדע מי עדכן מה בדף (היסטוריית עדכונים), אנא כתבו את שמכם:") || "").trim();
-    if(!n) n = "אורח/ת";
-    localStorage.setItem("issta-user", n);
+    if(n === "אורח/ת" || n.toLowerCase() === "אורח" ) n = ""; // אין רישום כאורח/ת
   }
+  localStorage.setItem("issta-user", n);
   return n;
 }
 
