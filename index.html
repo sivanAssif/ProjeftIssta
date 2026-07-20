@@ -796,13 +796,19 @@ function renderDash(main){
       {h:"לינק", render:it=>namedLinkCell(it,"lk","lkt","שינוי")},
       {h:"סטטוס", render:it=>statusPill(it,lbl)}
     ],lbl,D.changes));
-  chSec.appendChild(exportBtn("ייצוא טבלת שינויים לאקסל", exportChanges));
   chSec.appendChild(addRowBtn("הוספת שינוי", D.changes,
     ()=>({t:"שינוי חדש — לחצו לעריכה", o:"עדי", d:"", m:"לסווג", s:0}), "נוסף שינוי חדש"));
+  const chHead = chSec.querySelector(".sec-head");
+  if(chHead){ const chExp = exportBtn("ייצוא טבלת שינויים לאקסל", exportChanges); chExp.style.marginInlineStart = "12px"; chHead.appendChild(chExp); }
   const gapsH = document.createElement("h3");
-  gapsH.style.cssText = "font:700 15px/1.4 'Heebo','Inter',sans-serif;color:var(--ink);margin:22px 0 4px";
+  gapsH.style.cssText = "font:700 15px/1.4 'Heebo','Inter',sans-serif;color:var(--ink);margin:0";
   gapsH.textContent = 'פערים פוטנציאליים';
-  chSec.appendChild(gapsH);
+  const gapsRow = document.createElement("div");
+  gapsRow.style.cssText = "display:flex;align-items:center;gap:10px;margin:22px 0 4px";
+  gapsRow.appendChild(gapsH);
+  const gapsSp = document.createElement("span"); gapsSp.style.flex = "1"; gapsRow.appendChild(gapsSp);
+  gapsRow.appendChild(exportBtn("ייצוא טבלת פערים לאקסל", exportGaps));
+  chSec.appendChild(gapsRow);
   const gapsNote = document.createElement("div");
   gapsNote.style.cssText = "font-size:12.5px;color:var(--muted);margin:0 0 8px;line-height:1.6";
   gapsNote.textContent = "המטרה: לזהות מראש נושאים שעוד לא עלו אבל עלולים להפוך לבעיה — כל פער שנרשם כאן מקבל אחראי לבירור ונסגר לפני שהוא הופך לחסם ברגע האחרון.";
@@ -814,7 +820,6 @@ function renderDash(main){
     {h:"לינק", render:it=>namedLinkCell(it,"lk","lkt","פער")},
     {h:"סטטוס", render:it=>statusPill(it,lbl)}
   ],lbl,D.gaps));
-  chSec.appendChild(exportBtn("ייצוא טבלת פערים לאקסל", exportGaps));
   chSec.appendChild(addRowBtn("הוספת פער", D.gaps,
     ()=>({t:"פער חדש — לחצו לעריכה", o:"עדי", d:"", s:0}), "נוסף פער חדש"));
 
