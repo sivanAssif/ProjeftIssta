@@ -76,6 +76,12 @@ td.actions{width:34px;white-space:nowrap}
 .addrow:hover{color:var(--brand);border-color:var(--brand)}
 .xlsbtn{display:inline-flex;align-items:center;gap:6px;margin-top:10px;border:1px solid var(--line2);border-radius:6px;padding:6px 12px;font-family:inherit;font-size:12.5px;font-weight:600;color:var(--muted);background:#fff;cursor:pointer;transition:all .15s}
 .xlsbtn:hover{border-color:#2E9E5B;color:#2E9E5B}
+.mand{font-family:inherit;font-size:12.5px;font-weight:600;border-radius:999px;padding:3px 11px;cursor:pointer;border:1px solid transparent;display:inline-flex;align-items:center;gap:5px}
+.mand .arr{font-size:9px;opacity:.7}
+.mand.yes{background:#EAF3EA;color:#2E7D46;border-color:#CFE6D3}
+.mand.no{background:#F1EFF4;color:#6B6577;border-color:#E3DEEA}
+.mand.none{background:#fff;color:#B0A9BD;border:1px dashed #D8D2E2}
+.loctag{display:inline-block;background:#EEEBF6;color:#5B3E9B;border-radius:10px;padding:2px 9px;font-size:11.5px;font-weight:600;white-space:nowrap}
 
 [contenteditable]{border-radius:3px;padding:0 2px;transition:background .15s;outline:none;cursor:text;min-width:20px;display:inline-block}
 [contenteditable]:hover{background:var(--brand-bg)}
@@ -217,6 +223,9 @@ let DATA = null;
 let undoStack = [];
 let saveTimer = null, pendingSave = false;
 let view = "dash"; // dash | hist
+let CURRENT_SECTION = ""; // באיזו טבלה מתבצע העדכון — לרישום בהיסטוריה
+let changesMandFilter = "all"; // פילטר "חובה" בטבלת שינויים: all | חובה | לא חובה | none
+const MAND_OPTS = ["חובה","לא חובה"]; // ערכי עמודת "חובה לעלייה לאוויר?"
 let decFilter = "open"; // open | done | all
 let allTasksFilter = {domain:"הכל", owner:"הכל", view:"active"};
 let histFilter = {name:"", date:"", source:"all"};
@@ -251,8 +260,8 @@ function nowStamp(){
   return `${n.getDate()}.${n.getMonth()+1}.${n.getFullYear()} ${String(n.getHours()).padStart(2,"0")}:${String(n.getMinutes()).padStart(2,"0")}`;
 }
 
-function logAction(text){
-  DATA.history.unshift({ts: nowStamp(), u: userName(), a: text, src:"internal"});
+function logAction(text, loc){
+  DATA.history.unshift({ts: nowStamp(), u: userName(), a: text, src:"internal", loc: loc || ""});
   if(DATA.history.length > 500) DATA.history.length = 500;
 }
 function snapshot(){
@@ -290,8 +299,8 @@ async function doSave(){
     saveTimer = setTimeout(doSave, 5000);
   }
 }
-function change(desc, fn){
-  snapshot(); fn(); logAction(desc); renderAll(); queueSave();
+function change(desc, fn, loc){
+  snapshot(); fn(); logAction(desc, loc !== undefined ? loc : CURRENT_SECTION); renderAll(); queueSave();
 }
 
 const pop = document.getElementById("popover");
@@ -317,6 +326,7 @@ addEventListener("keydown", e=>{ if(e.key==="Escape") closeMenu(); });
 function esc(s){ const d=document.createElement("div"); d.textContent = s==null?"":s; return d.innerHTML; }
 
 function editableCell(item, field, label){
+  const loc = CURRENT_SECTION;
   const span = document.createElement("span");
   span.contentEditable = "true";
   span.textContent = item[field] || "";
@@ -325,13 +335,16 @@ function editableCell(item, field, label){
   span.addEventListener("blur", ()=>{
     const val = span.textContent.trim();
     if(val !== before.trim()){
-      change(`עודכן ${label}: ${val.slice(0,60)}`, ()=>{ item[field] = val; if(item.s===2) item.bt = Date.now(); });
+      const nm = (field==="t"||field==="n") ? "" : (item.t || item.n || "");
+      const suf = nm ? ` — ${nm.slice(0,60)}` : "";
+      change(`עודכן ${label}: ${val.slice(0,60)}${suf}`, ()=>{ item[field] = val; if(item.s===2) item.bt = Date.now(); }, loc);
     }
   });
   span.addEventListener("keydown", e=>{ if(e.key === "Enter"){ e.preventDefault(); span.blur(); } });
   return span;
 }
 function statusPill(item, itemLabel){
+  const loc = CURRENT_SECTION;
   const s = item.s ?? 0;
   const b = document.createElement("button");
   b.className = "pill s"+s;
@@ -342,11 +355,12 @@ function statusPill(item, itemLabel){
       item.s = ns;
       if(ns === 2) item.bt = Date.now();
       else { delete item.bt; delete item.esc; }
-    });
+    }, loc);
   });
   return b;
 }
 function ownerBtn(item, field, itemLabel){
+  const loc = CURRENT_SECTION;
   const cur = item[field] || UNASSIGNED;
   const b = document.createElement("button");
   b.className = "ownerbtn" + (cur === UNASSIGNED ? " unassigned" : "");
@@ -357,9 +371,23 @@ function ownerBtn(item, field, itemLabel){
       if(!pick) return;
       if(pick.includes("גלאור")){ alert("האחראי חייב להיות בן אדם — לא שם החברה."); return; }
     }
-    if(pick !== cur) change(`אחראי עודכן ל-${pick} — ${itemLabel(item).slice(0,70)}`, ()=>{ item[field] = pick; });
+    if(pick !== cur) change(`אחראי עודכן ל-${pick} — ${itemLabel(item).slice(0,70)}`, ()=>{ item[field] = pick; }, loc);
   });
   return b;
+}
+function mandatoryCell(item){
+  const loc = CURRENT_SECTION;
+  const td = document.createElement("td");
+  const cur = item.m === "חובה" ? "חובה" : item.m === "לא חובה" ? "לא חובה" : "";
+  const b = document.createElement("button");
+  b.className = "mand " + (cur==="חובה" ? "yes" : cur==="לא חובה" ? "no" : "none");
+  b.innerHTML = esc(cur || "בחר/י") + '<span class="arr">▾</span>';
+  b.onclick = ()=> openMenu(b, [...MAND_OPTS, "ללא סיווג"], cur || "ללא סיווג", pick=>{
+    const nv = pick === "ללא סיווג" ? "" : pick;
+    if(nv !== (item.m||"")) change(`חובה עודכן ל-${nv||"ללא סיווג"} — ${(item.t||"").slice(0,60)}`, ()=>{ if(nv) item.m = nv; else delete item.m; }, loc);
+  });
+  td.appendChild(b);
+  return td;
 }
 function dueCell(item, field){
   const td = document.createElement("td");
@@ -371,6 +399,7 @@ function dueCell(item, field){
 }
 const DOC_OPTS = ["כן","לא","לא רלוונטי"];
 function linkEl(item, field, addLabel){
+  const loc = CURRENT_SECTION;
   const span = document.createElement("span");
   span.style.cssText = "display:inline-flex;align-items:center;gap:5px";
   const url = item[field];
@@ -379,7 +408,7 @@ function linkEl(item, field, addLabel){
     if(raw === null) return;
     const val = raw.trim();
     if(val === (item[field] || "")) return;
-    change(val ? "עודכן לינק" : "הוסר לינק", ()=>{ if(val) item[field] = val; else delete item[field]; });
+    change(val ? "עודכן לינק" : "הוסר לינק", ()=>{ if(val) item[field] = val; else delete item[field]; }, loc);
   };
   if(url){
     const a = document.createElement("a"); a.href = url; a.target = "_blank"; a.rel = "noopener";
@@ -418,13 +447,14 @@ function linkDialog(curUrl, curLabel, onSave){
 }
 // לינק עם שם: כשמוזן לינק, הטקסט (השם/כותרת) עצמו הוא הקישור הניתן ללחיצה
 function namedLinkCell(item, urlField, labelField, tableLabel){
+  const loc = CURRENT_SECTION;
   const td = document.createElement("td");
   const wrap = document.createElement("span"); wrap.style.cssText = "display:inline-flex;align-items:center;gap:5px";
   const editBoth = ()=> linkDialog(item[urlField] || "", item[labelField] || "", (uu, tt)=>{
     change(`עודכן לינק (${tableLabel}): ${(tt||uu).slice(0,50)}`, ()=>{
       if(tt) item[labelField] = tt; else delete item[labelField];
       if(uu) item[urlField] = uu; else delete item[urlField];
-    });
+    }, loc);
   });
   const ed = ()=>{ const b=document.createElement("button"); b.className="linkedit"; b.title="עריכת לינק"; b.onclick=editBoth;
     b.innerHTML='<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>'; return b; };
@@ -446,12 +476,13 @@ function docCell(item){
   const td = document.createElement("td");
   const wrap = document.createElement("div");
   wrap.style.cssText = "display:flex;flex-direction:column;gap:5px;align-items:flex-start";
+  const loc = CURRENT_SECTION;
   const cur = item.doc || "לא";
   const b = document.createElement("button");
   b.className = "ownerbtn" + (cur === "כן" ? " doc-yes" : cur === "לא" ? " doc-no" : "");
   b.innerHTML = esc(cur) + '<span class="arr">▾</span>';
   b.onclick = ()=> openMenu(b, DOC_OPTS, cur, pick=>{
-    if(pick !== (item.doc || "לא")) change(`תיעוד עודכן ל-${pick} — ${(item.n||"").slice(0,60)}`, ()=>{ item.doc = pick; if(pick !== "כן") delete item.docl; });
+    if(pick !== (item.doc || "לא")) change(`תיעוד עודכן ל-${pick} — ${(item.n||"").slice(0,60)}`, ()=>{ item.doc = pick; if(pick !== "כן") delete item.docl; }, loc);
   });
   wrap.appendChild(b);
   td.appendChild(wrap);
@@ -465,13 +496,14 @@ function docLinkCell(item){
 }
 function yesNoCell(item){
   const td = document.createElement("td");
+  const loc = CURRENT_SECTION;
   const yes = !!item.done;
   const b = document.createElement("button");
   b.className = "ownerbtn" + (yes ? " doc-yes" : " doc-no");
   b.innerHTML = (yes ? "כן" : "לא") + '<span class="arr">▾</span>';
   b.onclick = ()=> openMenu(b, ["כן","לא"], yes ? "כן" : "לא", pick=>{
     const nv = pick === "כן";
-    if(nv !== !!item.done) change(`בוצע ${nv?"כן":"לא"} — ${(item.t||"").slice(0,60)}`, ()=>{ item.done = nv; });
+    if(nv !== !!item.done) change(`בוצע ${nv?"כן":"לא"} — ${(item.t||"").slice(0,60)}`, ()=>{ item.done = nv; }, loc);
   });
   td.appendChild(b);
   return td;
@@ -483,16 +515,17 @@ function isPristine(it){
   });
 }
 function deleteBtn(item, itemLabel, srcArr){
+  const loc = CURRENT_SECTION;
   const b = document.createElement("button");
   if(item.x){
     b.className = "xbtn restore"; b.textContent = "↩"; b.title = "שחזור שורה";
-    b.onclick = ()=> change(`שוחזרה שורה — ${itemLabel(item).slice(0,70)}`, ()=>{ delete item.x; });
+    b.onclick = ()=> change(`שוחזרה שורה — ${itemLabel(item).slice(0,70)}`, ()=>{ delete item.x; }, loc);
   }else if(srcArr && isPristine(item)){
     b.className = "xbtn"; b.textContent = "✕"; b.title = "מחיקת שורה ריקה";
-    b.onclick = ()=> change("נמחקה שורה ריקה", ()=>{ const i = srcArr.indexOf(item); if(i > -1) srcArr.splice(i,1); });
+    b.onclick = ()=> change("נמחקה שורה ריקה", ()=>{ const i = srcArr.indexOf(item); if(i > -1) srcArr.splice(i,1); }, loc);
   }else{
     b.className = "xbtn"; b.textContent = "✕"; b.title = "ביטול שורה (ניתן לשחזר בתחתית הדף, בפילטר שורות שבוטלו)";
-    b.onclick = ()=> change(`בוטלה שורה — ${itemLabel(item).slice(0,70)}`, ()=>{ item.x = true; });
+    b.onclick = ()=> change(`בוטלה שורה — ${itemLabel(item).slice(0,70)}`, ()=>{ item.x = true; }, loc);
   }
   return b;
 }
@@ -525,9 +558,10 @@ function buildTable(items, cols, itemLabel, srcArr){
   return wrap;
 }
 function addRowBtn(label, arr, newRow, logText){
+  const loc = CURRENT_SECTION;
   const b = document.createElement("button");
   b.className = "addrow"; b.textContent = "+ " + label;
-  b.onclick = ()=> change(logText, ()=>{ arr.push(newRow()); });
+  b.onclick = ()=> change(logText, ()=>{ arr.push(newRow()); }, loc);
   return b;
 }
 
@@ -660,7 +694,7 @@ function renderHistory(main){
 
   const wrap = document.createElement("div"); wrap.className="tblwrap";
   const t = document.createElement("table");
-  t.innerHTML = `<thead><tr><th style="width:150px">מתי</th><th style="width:140px">מי</th><th>מה</th><th style="width:80px">מקור</th></tr></thead>`;
+  t.innerHTML = `<thead><tr><th style="width:120px">היכן</th><th style="width:80px">מקור</th><th>מה</th><th style="width:120px">מי</th><th style="width:150px">מתי</th></tr></thead>`;
   const tb = document.createElement("tbody");
   t.appendChild(tb); wrap.appendChild(t); s.appendChild(wrap);
   main.appendChild(s);
@@ -685,13 +719,14 @@ function renderHistory(main){
       const tr = document.createElement("tr");
       const srcTxt = hh.src==="client" ? "לקוח" : "פנימי";
       const srcCls = hh.src==="client" ? "srctag client" : "srctag internal";
-      tr.innerHTML = `<td class="num">${esc(hh.ts)}</td><td>${esc(hh.u)}</td><td>${esc(hh.a)}</td><td><span class="${srcCls}">${srcTxt}</span></td>`;
+      const locCell = hh.loc ? `<span class="loctag">${esc(hh.loc)}</span>` : `<span style="color:var(--dim)">—</span>`;
+      tr.innerHTML = `<td>${locCell}</td><td><span class="${srcCls}">${srcTxt}</span></td><td>${esc(hh.a)}</td><td>${esc(hh.u)}</td><td class="num">${esc(hh.ts)}</td>`;
       tb.appendChild(tr);
     });
     if(!rows.length){
       const tr = document.createElement("tr");
       const msg = DATA.history.length ? "אין עדכונים התואמים לסינון" : "אין עדיין עדכונים";
-      tr.innerHTML = `<td colspan="4" style="color:var(--dim)">${msg}</td>`;
+      tr.innerHTML = `<td colspan="5" style="color:var(--dim)">${msg}</td>`;
       tb.appendChild(tr);
     }
   }
@@ -714,6 +749,7 @@ function renderDash(main){
   };
 
   /* --- שולחן אורלי --- */
+  CURRENT_SECTION = "שולחן אורלי";
   const decSec = addSec(secHead("sec-decisions","crown","","שולחן אורלי — החלטות פתוחות",null,false,"ההחלטות שרק אורלי יכולה לסגור. החלטה שהתקבלה — לתעד בעמודת ההחלטה ולסמן הושלם."));
   const decGoal = document.createElement("div"); decGoal.className="goal"; decGoal.style.margin="0 0 12px";
   decGoal.innerHTML = `<b>מתי מוסיפים החלטה:</b> כל מי שנתקל בנושא שדורש הכרעה של אורלי, התערבות שלה או שיקוף מיידי — מוסיף שורה מיד, עם למה זה דחוף ותאריך יעד.`;
@@ -745,6 +781,7 @@ function renderDash(main){
     ()=>({t:"החלטה חדשה — לחצו לעריכה", w:"", d:"", dec:"", s:0}), "נוספה החלטה חדשה לשולחן אורלי"));
 
   /* --- חסמים --- */
+  CURRENT_SECTION = "חסמים";
   const blkSec = addSec(secHead("sec-blockers","alert","red","חסמים פתוחים — דורשים החלטה / הסלמה",null,false,"מה שתקוע עכשיו ועוצר עבודה. חסם שנפתר — לסמן הושלם."));
   const blkGoal = document.createElement("div"); blkGoal.className="goal"; blkGoal.style.margin="0 0 12px";
   blkGoal.innerHTML = `<b>מהו חסם פתוח:</b> משימה שלא יכולה להתקדם כי משהו עוצר אותה — החלטה חסרה, גורם חיצוני או תלות בצוות אחר. <b>מתי מוסיפים חסם:</b> ברגע שמזהים שעבודה נעצרה ואי אפשר לשחרר אותה לבד — לא מחכים לישיבה. <b>ההבדל משולחן אורלי:</b> חסם הוא בעיה תפעולית שאחראי מסוים צריך לשחרר; לשולחן אורלי עולים רק נושאים שדורשים הכרעה של אורלי עצמה.`;
@@ -760,6 +797,7 @@ function renderDash(main){
     ()=>({t:"חסם חדש — לחצו לעריכה", o:UNASSIGNED, d:"", a:"", s:0}), "נוסף חסם חדש"));
 
   /* --- אבני דרך --- */
+  CURRENT_SECTION = "אבני דרך";
   const msSec = addSec(secHead("sec-milestones","flag","","אבני דרך — תכנון לאחור מ-9.10",null,false,"כל אבן דרך היא שער: לא עוברים הלאה בלי לסגור אותה או להחליט במודע לדחות."));
   const cards = document.createElement("div"); cards.className="cards";
   D.milestones.filter(m=>!m.x).forEach(m=>{
@@ -784,20 +822,32 @@ function renderDash(main){
     ()=>({d:"", t:"אבן דרך חדשה — לחצו לעריכה", o:UNASSIGNED, s:0}), "נוספה אבן דרך חדשה"));
 
   /* --- שינויים ופערים --- */
+  CURRENT_SECTION = "שינויים";
   const chSec = addSec(secHead("sec-changes","list","","תחום 1 · שינויים ופערים","אחראי: עדי",false,"המטרה: שרשימת השינויים תפסיק להיות זרם אינסופי ותהפוך לרשימה סגורה ומנוהלת."));
   const chGoal = document.createElement("div"); chGoal.className="goal"; chGoal.style.marginTop="0";
   chGoal.innerHTML = `<b>התוצר:</b> טבלת שינויים חיה — לכל שינוי: חובה/לא לעלייה לאוויר, סיכון (מה יכול להישבר), השפעה על flow הבדיקות ואיך בודקים. <b>למה זה חשוב:</b> בלי זה אין הקפאת שינויים ואין דרך לדעת מה מסכן את העלייה לאוויר. <b>איך לגשת:</b> לעבור על גרסאות 138–145 באקסל של נלי, לסווג כל פריט פתוח, ולנהל בנוסף רשימה של פערים שעוד יכולים לצוץ — נושאים שטרם עלו אבל עלולים להתגלות בהמשך העבודה.`;
   chSec.appendChild(chGoal); chGoal.style.marginBottom="14px";
-  chSec.appendChild(buildTable(D.changes,[
+  const chFilt = document.createElement("div"); chFilt.className = "filters";
+  const chSelWrap = document.createElement("label"); chSelWrap.className = "fsel";
+  const chSelSp = document.createElement("span"); chSelSp.textContent = "חובה לעלייה לאוויר?"; chSelWrap.appendChild(chSelSp);
+  const chSel = document.createElement("select"); chSel.className = "finput";
+  [["all","הכל"],["חובה","חובה"],["לא חובה","לא חובה"],["none","ללא סיווג"]].forEach(([v,txt])=>{ const o=document.createElement("option"); o.value=v; o.textContent=txt; if(v===changesMandFilter) o.selected=true; chSel.appendChild(o); });
+  chSel.onchange = ()=>{ changesMandFilter = chSel.value; renderAll(); };
+  chSelWrap.appendChild(chSel); chFilt.appendChild(chSelWrap);
+  chSec.appendChild(chFilt);
+  let changesRows = D.changes;
+  if(changesMandFilter === "none") changesRows = changesRows.filter(it=> !it.m || (it.m!=="חובה" && it.m!=="לא חובה"));
+  else if(changesMandFilter !== "all") changesRows = changesRows.filter(it=> it.m === changesMandFilter);
+  chSec.appendChild(buildTable(changesRows,[
       {h:"השינוי", render:it=>editableCell(it,"t","שינוי")},
       {h:"אחראי", render:it=>ownerBtn(it,"o",lbl)},
       {h:"יעד", render:it=>dueCell(it,"d")},
-      {h:"חובה לעלייה לאוויר?", render:it=>editableCell(it,"m","סיווג")},
+      {h:"חובה לעלייה לאוויר?", render:it=>mandatoryCell(it)},
       {h:"לינק", render:it=>namedLinkCell(it,"lk","lkt","שינוי")},
       {h:"סטטוס", render:it=>statusPill(it,lbl)}
     ],lbl,D.changes));
   chSec.appendChild(addRowBtn("הוספת שינוי", D.changes,
-    ()=>({t:"שינוי חדש — לחצו לעריכה", o:"עדי", d:"", m:"לסווג", s:0}), "נוסף שינוי חדש"));
+    ()=>({t:"שינוי חדש — לחצו לעריכה", o:"עדי", d:"", s:0}), "נוסף שינוי חדש"));
   const chHead = chSec.querySelector(".sec-head");
   if(chHead){ const chExp = exportBtn("ייצוא טבלת שינויים לאקסל", exportChanges); chExp.style.marginInlineStart = "12px"; chHead.appendChild(chExp); }
   const gapsH = document.createElement("h3");
@@ -813,6 +863,7 @@ function renderDash(main){
   gapsNote.style.cssText = "font-size:12.5px;color:var(--muted);margin:0 0 8px;line-height:1.6";
   gapsNote.textContent = "המטרה: לזהות מראש נושאים שעוד לא עלו אבל עלולים להפוך לבעיה — כל פער שנרשם כאן מקבל אחראי לבירור ונסגר לפני שהוא הופך לחסם ברגע האחרון.";
   chSec.appendChild(gapsNote);
+  CURRENT_SECTION = "פערים";
   chSec.appendChild(buildTable(D.gaps,[
     {h:"פער פוטנציאלי", render:it=>editableCell(it,"t","פער")},
     {h:"אחראי לבירור", render:it=>ownerBtn(it,"o",lbl)},
@@ -824,6 +875,7 @@ function renderDash(main){
     ()=>({t:"פער חדש — לחצו לעריכה", o:"עדי", d:"", s:0}), "נוסף פער חדש"));
 
   /* --- בדיקות --- */
+  CURRENT_SECTION = "בדיקות";
   const qaSec = addSec(secHead("sec-qa","test","","תחום 2 · בדיקות — מטריצת סנריו","אחראית: ניתי (QA) · מלווה: תומר",false,"לכל סנריו אחראי אחד מהגילוי ועד תיקון, אימות ושיקוף — לא נופל בין הכיסאות."));
   const qaGoal = document.createElement("div"); qaGoal.className="goal"; qaGoal.style.margin="0 0 14px";
   qaGoal.innerHTML = `<b>התוצר:</b> מטריצת סנריו משוקפת ללקוח — הלקוח רואה מה בודקים, נותן פידבק, וההערות שלו נכנסות לטבלה. <b>למה זה חשוב:</b> שלא יקרה שרגע לפני עלייה הלקוח שואל על נושא שאף אחד לא מכיר. <b>איך לגשת:</b> ב-13.7 מפרסמים ללקוח את המטריצה, ממנים אחראי לכל סנריו, ומגדירים את נקודת הכרזנו סיימנו ל-31.8.`;
@@ -840,6 +892,7 @@ function renderDash(main){
 
   /* --- ממשקים --- */
   const ilbl = it => it.n || "";
+  CURRENT_SECTION = "ממשקים";
   const ifSec = addSec(secHead("sec-interfaces","plug","","תחום 3 · ממשקים צד ג'","אחראי: ⚠ טרם מונה — פער פתוח",true,"קשר יומי עם כל צד ג', כולל דיווח שהיום לא קרה כלום. שינוי אצלם = בדיקה אצלנו."));
   const ifGoal = document.createElement("div"); ifGoal.className="goal"; ifGoal.style.margin="0 0 14px";
   ifGoal.innerHTML = `<b>התוצר:</b> סטטוס יומי פר ממשק + וידוא יזום (פעמיים!) שכל ההכנות בצד שלנו בוצעו. <b>דגשים:</b> סביבות בדיקה זהות לייצור, טיפול בשגיאות וגיבוי, בדיקת נפחים/עומסים, אנשי קשר וזמני תגובה מוסכמים, ומעקב שינויי API בצד שלהם. <b>איך לגשת:</b> למנות אחראי אחד (השבוע!), לקבוע ערוץ יומי, ולנהל את הטבלה כמקור אמת.`;
@@ -858,6 +911,7 @@ function renderDash(main){
     ()=>({n:"ממשק חדש", st:"", o:UNASSIGNED, d:"", nx:"", doc:"לא", s:0}), "נוסף ממשק חדש"));
 
   /* --- הדרכות --- */
+  CURRENT_SECTION = "הדרכות";
   const trSec = addSec(secHead("sec-training","grad","","תחום 4 · הדרכות","אחראית: דניס",false,"הדרכה בלי דף מסכם לפי תהליך העבודה של הלקוח — לא נספרת כהושלמה."));
   const trGoal = document.createElement("div"); trGoal.className="goal"; trGoal.style.margin="0 0 14px";
   trGoal.innerHTML = `<b>התוצר:</b> לכל הדרכה — סיכום איך היה, דף עזר ללקוח לפי תהליך העבודה שלו (לא גנרי!) שנשלח מיד אחרי, הקלטה, ומנגנון וידוא הבנה. <b>למה זה חשוב:</b> הדף הוא מה שיציל את המשתמש ברגע האמת אחרי העלייה לאוויר. <b>איך לגשת:</b> לבנות עכשיו את רשימת ההדרכות שנותרו, להכין דפי עזר מראש, ולסגור את כולן לפני 14.9.`;
@@ -873,6 +927,7 @@ function renderDash(main){
     ()=>({t:"הדרכה חדשה — לחצו לעריכה", o:"דניס", d:"", s:0}), "נוספה הדרכה חדשה"));
 
   /* --- בקרה --- */
+  CURRENT_SECTION = "בקרה וקצב";
   const govSec = addSec(secHead("sec-gov","activity","","תחום 5 · בקרה וקצב","אחראית: נלי (PM)",false,"הקצב הוא המנגנון שמונע בלאגן: כל אחד יודע מתי הוא מדווח ועל מה."));
   const govGoal = document.createElement("div"); govGoal.className="goal"; govGoal.style.margin="0 0 14px";
   govGoal.innerHTML = `<b>המנגנון:</b> <span class="mnum">1</span> דיילי 15 דק' — כל בעל תחום: מה זז, מה תקוע. <span class="mnum">2</span> ישיבת בקרה שבועית — מעבר על הדשבורד הזה. <span class="mnum">3</span> דיווח שבועי לאורלי — רמזור + חסמים להחלטתה בלבד. <span class="mnum">4</span> Go/No-Go ב-15.9 עם קריטריונים מראש (למטה).`;
@@ -890,10 +945,11 @@ function renderDash(main){
   const gng = document.createElement("div"); gng.className="goal"; gng.style.margin="0";
   gng.innerHTML = `<h3>קריטריוני Go/No-Go — 15.9 עם אורלי והלקוח</h3>`;
   const gwrap = document.createElement("div");
+  CURRENT_SECTION = "Go/No-Go";
   D.gonogo.forEach(g=>{
     const row = document.createElement("div"); row.className = "check" + (g.done?" done":"");
     const cb = document.createElement("input"); cb.type="checkbox"; cb.checked = !!g.done;
-    cb.onchange = ()=> change(`Go/No-Go ${cb.checked?"סומן":"בוטל סימון"} — ${g.t.slice(0,60)}`, ()=>{ g.done = cb.checked; });
+    cb.onchange = ()=> change(`Go/No-Go ${cb.checked?"סומן":"בוטל סימון"} — ${g.t.slice(0,60)}`, ()=>{ g.done = cb.checked; }, "Go/No-Go");
     const sp = document.createElement("span"); sp.appendChild(editableCell(g,"t","קריטריון Go/No-Go"));
     row.append(cb,sp); gwrap.appendChild(row);
   });
@@ -904,6 +960,7 @@ function renderDash(main){
   hyper.innerHTML = `<h3>תוכנית ליווי מוגבר אחרי העלייה לאוויר — 9.10 ואילך</h3>`;
   const hwrap = document.createElement("ul");
   hwrap.style.cssText = "margin:0;padding-inline-start:18px;line-height:1.6";
+  CURRENT_SECTION = "ליווי מוגבר";
   D.hypercare.forEach(hc=>{
     const li = document.createElement("li"); li.style.marginBottom="5px";
     li.appendChild(editableCell(hc,"t","סעיף ליווי מוגבר"));
@@ -916,6 +973,7 @@ function renderDash(main){
   govSec.appendChild(govGrid);
 
   /* --- סיכונים --- */
+  CURRENT_SECTION = "סיכונים";
   const rkSec = addSec(secHead("sec-risks","alert","orange","סיכונים מרכזיים",null,false,"סיכון שהתממש הופך לחסם ועולה לטבלת החסמים למעלה."),
     buildTable(D.risks,[
       {h:"הסיכון", render:it=>editableCell(it,"t","סיכון")},
@@ -972,6 +1030,7 @@ function renderDash(main){
   at.innerHTML = `<thead><tr><th>תחום</th><th>המשימה</th><th>אחראי</th><th>יעד</th><th>סטטוס</th><th></th></tr></thead>`;
   const atb = document.createElement("tbody");
   rows.forEach(({domain,anchor,it})=>{
+    CURRENT_SECTION = domain;
     const tr = document.createElement("tr");
     if(it.x) tr.className="deleted";
     else if(it.s === 3) tr.className="donerow";
@@ -992,6 +1051,7 @@ function renderDash(main){
   at.appendChild(atb); allWrap.appendChild(at); allSec.appendChild(allWrap);
 
   /* --- הגדרות סביבה --- */
+  CURRENT_SECTION = "הגדרות סביבה";
   const envSec = addSec(secHead("sec-env","grid","","הגדרות סביבה",null,false,"הגדרות סביבת העבודה — נושא, אחראי, תאריך יעד, ביצוע ומסמך מצורף."));
   envSec.appendChild(buildTable(D.env,[
       {h:"נושא", render:it=>editableCell(it,"t","נושא")},
@@ -1005,6 +1065,7 @@ function renderDash(main){
     ()=>({t:"נושא חדש — לחצו לעריכה", o:UNASSIGNED, d:"", done:false, note:""}), "נוספה שורת הגדרות סביבה"));
 
   /* --- Follow up --- */
+  CURRENT_SECTION = "Follow up";
   const fuSec = addSec(secHead("sec-followup","list","","Follow up",null,false,"מעקב נושאים פתוחים — נושא, אחראי, סטטוס, יעד, הערות ולינק."));
   fuSec.appendChild(buildTable(D.follow,[
       {h:"נושא", render:it=>editableCell(it,"t","נושא")},
