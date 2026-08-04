@@ -82,6 +82,16 @@ td.actions{width:34px;white-space:nowrap}
 .mand.no{background:#F1EFF4;color:#6B6577;border-color:#E3DEEA}
 .mand.none{background:#fff;color:#B0A9BD;border:1px dashed #D8D2E2}
 .loctag{display:inline-block;background:#EEEBF6;color:#5B3E9B;border-radius:10px;padding:2px 9px;font-size:11.5px;font-weight:600;white-space:nowrap}
+.msel{position:relative;display:inline-block}
+.mselbtn{display:inline-flex;align-items:center;justify-content:space-between;gap:18px;min-width:150px;cursor:pointer;background:#fff;font-family:inherit}
+.mseldrop{position:absolute;top:calc(100% + 4px);inset-inline-start:0;background:#fff;border:1px solid var(--line);border-radius:10px;box-shadow:0 10px 30px rgba(27,18,48,.16);z-index:70;padding:6px;display:none;min-width:200px}
+.mseldrop.open{display:block}
+.mselrow{display:flex;align-items:center;gap:8px;padding:5px 7px;border-radius:6px;cursor:pointer}
+.mselrow:hover{background:var(--brand-bg)}
+.mselrow input,.mselrow .pill{cursor:pointer}
+.mselacts{display:flex;gap:6px;border-top:1px solid var(--row);margin-top:4px;padding-top:6px}
+.mselacts button{flex:1;font-family:inherit;font-size:12px;font-weight:600;border:1px solid var(--line);background:#fff;border-radius:6px;padding:5px;cursor:pointer;color:var(--muted)}
+.mselacts button:hover{border-color:var(--brand);color:var(--brand)}
 .badlink{display:inline-flex;align-items:center;gap:5px;background:#FCF2F1;color:#B23B36;border:1px solid #EAC3BC;border-radius:12px;padding:3px 10px;font-size:11.5px;font-weight:600;white-space:nowrap;cursor:default}
 .badlink svg{flex:none}
 
@@ -230,6 +240,8 @@ let view = "dash"; // dash | hist
 let CURRENT_SECTION = ""; // באיזו טבלה מתבצע העדכון — לרישום בהיסטוריה
 let changesMandFilter = "all"; // פילטר "חובה" בטבלת שינויים: all | חובה | לא חובה | none
 const MAND_OPTS = ["חובה","לא חובה"]; // ערכי עמודת "חובה לעלייה לאוויר?"
+let changesStatusFilter = STATUSES.map((_,i)=>i).filter(i=> STATUSES[i]!=="הושלם"); // ברירת מחדל: הכל חוץ מהושלם
+let changesStatusOpen = false; // האם תפריט הסטטוסים פתוח
 let decFilter = "open"; // open | done | all
 let allTasksFilter = {domain:"הכל", owner:"הכל", view:"active"};
 let histFilter = {name:"", date:"", source:"all"};
@@ -325,6 +337,7 @@ function openMenu(anchor, options, current, onPick){
 }
 function closeMenu(){ pop.style.display = "none"; }
 addEventListener("click", e=>{ if(!pop.contains(e.target) && !e.target.closest(".pill,.ownerbtn")) closeMenu(); }, true);
+addEventListener("click", e=>{ if(!e.target.closest(".msel") && changesStatusOpen){ changesStatusOpen = false; document.querySelectorAll(".mseldrop.open").forEach(d=> d.classList.remove("open")); } });
 addEventListener("keydown", e=>{ if(e.key==="Escape") closeMenu(); });
 
 function esc(s){ const d=document.createElement("div"); d.textContent = s==null?"":s; return d.innerHTML; }
@@ -346,6 +359,42 @@ function editableCell(item, field, label){
   });
   span.addEventListener("keydown", e=>{ if(e.key === "Enter"){ e.preventDefault(); span.blur(); } });
   return span;
+}
+// שדה פילטר סטטוס מרובה-בחירה (טבלת שינויים)
+function statusMultiSelect(){
+  const wrap = document.createElement("label"); wrap.className = "fsel";
+  const sp = document.createElement("span"); sp.textContent = "סטטוס"; wrap.appendChild(sp);
+  const box = document.createElement("div"); box.className = "msel";
+  const btn = document.createElement("button"); btn.type = "button"; btn.className = "finput mselbtn";
+  const summary = ()=>{
+    const n = changesStatusFilter.length;
+    if(n === STATUSES.length) return "כל הסטטוסים";
+    if(n === 0) return "לא נבחר";
+    return n + " נבחרו";
+  };
+  btn.innerHTML = `<span>${summary()}</span><span class="arr">▾</span>`;
+  const drop = document.createElement("div"); drop.className = "mseldrop" + (changesStatusOpen ? " open" : "");
+  STATUSES.forEach((st,i)=>{
+    const row = document.createElement("label"); row.className = "mselrow";
+    const cb = document.createElement("input"); cb.type = "checkbox"; cb.checked = changesStatusFilter.includes(i);
+    cb.onchange = ()=>{
+      if(cb.checked){ if(!changesStatusFilter.includes(i)) changesStatusFilter.push(i); }
+      else changesStatusFilter = changesStatusFilter.filter(x=> x !== i);
+      changesStatusOpen = true; renderAll();
+    };
+    const pill = document.createElement("span"); pill.className = "pill s"+i; pill.style.pointerEvents = "none";
+    pill.innerHTML = `<span class="dot"></span>${esc(st)}`;
+    row.append(cb, pill); drop.appendChild(row);
+  });
+  const acts = document.createElement("div"); acts.className = "mselacts";
+  const allB = document.createElement("button"); allB.type = "button"; allB.textContent = "הכל";
+  allB.onclick = ()=>{ changesStatusFilter = STATUSES.map((_,i)=>i); changesStatusOpen = true; renderAll(); };
+  const clrB = document.createElement("button"); clrB.type = "button"; clrB.textContent = "נקה";
+  clrB.onclick = ()=>{ changesStatusFilter = []; changesStatusOpen = true; renderAll(); };
+  acts.append(allB, clrB); drop.appendChild(acts);
+  btn.onclick = (e)=>{ e.preventDefault(); e.stopPropagation(); changesStatusOpen = !changesStatusOpen; drop.classList.toggle("open", changesStatusOpen); };
+  box.append(btn, drop); wrap.appendChild(box);
+  return wrap;
 }
 function statusPill(item, itemLabel){
   const loc = CURRENT_SECTION;
@@ -865,8 +914,9 @@ function renderDash(main){
   [["all","הכל"],["חובה","חובה"],["לא חובה","לא חובה"],["none","ללא סיווג"]].forEach(([v,txt])=>{ const o=document.createElement("option"); o.value=v; o.textContent=txt; if(v===changesMandFilter) o.selected=true; chSel.appendChild(o); });
   chSel.onchange = ()=>{ changesMandFilter = chSel.value; renderAll(); };
   chSelWrap.appendChild(chSel); chFilt.appendChild(chSelWrap);
+  chFilt.appendChild(statusMultiSelect());
   chSec.appendChild(chFilt);
-  let changesRows = D.changes;
+  let changesRows = D.changes.filter(it=> changesStatusFilter.includes(it.s ?? 0));
   if(changesMandFilter === "none") changesRows = changesRows.filter(it=> !it.m || (it.m!=="חובה" && it.m!=="לא חובה"));
   else if(changesMandFilter !== "all") changesRows = changesRows.filter(it=> it.m === changesMandFilter);
   chSec.appendChild(buildTable(changesRows,[
